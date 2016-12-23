@@ -53,7 +53,7 @@ Make executable
 
 Add env variables
 -----------------
-These commands depend on two env variables:
+These commands require two env variables:
 - BACKUPCONFD = directory for configuration files used by scripts (auth tokens, etc.)
 - BACKUPDATAD = directory for backup data
 

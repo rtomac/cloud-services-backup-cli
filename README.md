@@ -6,9 +6,8 @@ Written for my personal use, but hopefully useful to others (directly, or as a r
 
 Depends on
 ==========
-[rclone](http://rclone.org/), via [Docker](https://hub.docker.com/r/kevineye/rclone/)
-
-[gmvault](http://gmvault.org/), via [Docker](https://hub.docker.com/r/tianon/gmvault/)
+- [rclone](http://rclone.org/), via [Docker](https://hub.docker.com/r/kevineye/rclone/)
+- [gmvault](http://gmvault.org/), via [Docker](https://hub.docker.com/r/tianon/gmvault/)
 
 Commands
 ========

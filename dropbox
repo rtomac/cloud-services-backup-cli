@@ -1,0 +1,23 @@
+#!/bin/bash
+
+export PATH="$(dirname $0)"/tools:$PATH
+
+COMMAND="$1"
+case $COMMAND in
+
+  "sync")
+
+    USER=$2
+    REMOTE="dropbox-$USER"
+    echo Using rclone remote $REMOTE
+    run-rclone sync --stats 0 "$REMOTE":/ "$BACKUPDATAD/dropbox/$USER"
+    ;;
+
+  *)
+
+    echo "Invalid command"
+    exit 1
+    ;;
+
+esac
+

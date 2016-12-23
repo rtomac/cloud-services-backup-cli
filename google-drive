@@ -1,0 +1,36 @@
+#!/bin/bash
+
+export PATH="$(dirname $0)"/tools:$PATH
+
+function run-rclone-sync-cmd {
+  USER=$1
+  CMDTYPE=$2
+  REMOTE="drive-$USER"
+  echo Using rclone remote $REMOTE
+  run-rclone dedupe --stats 0 --dedupe-mode rename "$REMOTE":/
+  run-rclone $CMDTYPE --stats 0 "$REMOTE":/ "$BACKUPDATAD/google-drive/$USER"
+}
+
+COMMAND="$1"
+case $COMMAND in
+
+  "copy")
+
+    USER=$2
+    run-rclone-sync-cmd "$USER" copy
+    ;;
+
+  "sync")
+
+    USER=$2
+    run-rclone-sync-cmd "$USER" sync
+    ;;
+
+  *)
+
+    echo "Invalid command"
+    exit 1
+    ;;
+
+esac
+

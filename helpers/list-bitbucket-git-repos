@@ -1,0 +1,24 @@
+#!/usr/bin/env python
+
+import sys
+import urllib
+import requests
+
+username = sys.argv[1]
+password_file = sys.argv[2]
+
+with open(password_file, 'r') as f:
+  password = f.readline().strip()
+
+api_repo_url = "https://api.bitbucket.org/1.0/user/repositories"
+response = requests.get(api_repo_url, auth=(username, password))
+response.raise_for_status()
+for repo in response.json():
+  if repo['scm'] == 'git':
+    repo_url_format = "https://{0}@bitbucket.org/{1}/{2}.git"
+    slug = repo['slug']
+    credentials = "{0}:{1}".format(username, urllib.quote_plus(password))
+    clone_url = repo_url_format.format(credentials, username, slug)
+    fetch_url = repo_url_format.format(username, username, slug)
+    print "{0} {1} {2}".format(slug, clone_url, fetch_url)
+

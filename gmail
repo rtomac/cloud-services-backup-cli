@@ -1,0 +1,36 @@
+#!/bin/bash
+
+export PATH="$(dirname $0)"/tools:$PATH
+
+function run-gmvault-sync-cmd {
+  USER=$1
+  GMAIL=$2
+  SYNCTYPE=$3
+  run-gmvault sync --type "$SYNCTYPE" --db-dir "$BACKUPDATAD/gmail/$USER" "$GMAIL"
+}
+
+COMMAND="$1"
+case $COMMAND in
+
+  "full-sync")
+
+    USER=$2
+    GMAIL=$3
+    run-gmvault-sync-cmd "$USER" "$GMAIL" full
+    ;;
+
+  "quick-sync")
+
+    USER=$2
+    GMAIL=$3
+    run-gmvault-sync-cmd "$USER" "$GMAIL" quick
+    ;;
+
+  *)
+
+    echo "Invalid command"
+    exit 1
+    ;;
+
+esac
+

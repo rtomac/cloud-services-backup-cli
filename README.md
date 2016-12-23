@@ -13,14 +13,12 @@ Commands
 ========
 Gmail
 -----
-`gmail full-sync ryan ryan.tomac@gmail.com`
-
+`gmail full-sync ryan ryan.tomac@gmail.com`  
 `gmail quick-sync ryan ryan.tomac@gmail.com`
 
 Google Drive
 ------------
-`google-drive copy ryan`
-
+`google-drive copy ryan`  
 `google-drive sync ryan`
 
 Google Photos
@@ -37,9 +35,33 @@ Github (public repos)
 
 Bitbucket (public and private repos)
 ------------------------------------
-`bitbucket set-app-password rtomac "password"`
-
+`bitbucket set-app-password rtomac "password"`  
 `bitbucket clone-all rtomac`
+
+Installation
+============
+Download
+--------
+```git clone https://github.com/rtomac/home-cloud-backup.git
+cd home-cloud-backup```
+
+Make executable
+---------------
+`chmod -R a+x ./`
+
+Add env variables
+-----------------
+These commands depend on two env variables:
+- BACKUPCONFD = directory for configuration files used by scripts (auth tokens, etc.)
+- BACKUPDATAD = directory for backup data
+```cat <<EOF | sudo tee -a /etc/environment
+BACKUPCONFD=$HOME/cloud/conf
+BACKUPDATAD=$HOME/cloud/data
+EOF```
+
+Setup auth
+----------
+Most of these commands require authentication (e.g. OAuth tokens). Run each of them manually once to set that up. (TODO: add more detail here, especially wrt rclone.)
 
 License
 =======

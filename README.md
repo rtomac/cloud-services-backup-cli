@@ -42,8 +42,10 @@ Installation
 ============
 Download
 --------
-```git clone https://github.com/rtomac/home-cloud-backup.git
-cd home-cloud-backup```
+```
+git clone https://github.com/rtomac/home-cloud-backup.git
+cd home-cloud-backup
+```
 
 Make executable
 ---------------
@@ -55,10 +57,12 @@ These commands depend on two env variables:
 - BACKUPCONFD = directory for configuration files used by scripts (auth tokens, etc.)
 - BACKUPDATAD = directory for backup data
 
-```cat <<EOF | sudo tee -a /etc/environment
+```
+cat <<EOF | sudo tee -a /etc/environment
 BACKUPCONFD=$HOME/cloud/conf
 BACKUPDATAD=$HOME/cloud/data
-EOF```
+EOF
+```
 
 Setup auth
 ----------

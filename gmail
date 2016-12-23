@@ -1,6 +1,6 @@
 #!/bin/bash
 
-export PATH="$(dirname $0)"/tools:$PATH
+source .environment
 
 function run-gmvault-sync-cmd {
   USER=$1

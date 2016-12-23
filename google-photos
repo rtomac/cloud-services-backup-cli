@@ -1,6 +1,6 @@
 #!/bin/bash
 
-export PATH="$(dirname $0)"/tools:$PATH
+source .environment
 
 COMMAND="$1"
 case $COMMAND in

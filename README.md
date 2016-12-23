@@ -54,6 +54,7 @@ Add env variables
 These commands depend on two env variables:
 - BACKUPCONFD = directory for configuration files used by scripts (auth tokens, etc.)
 - BACKUPDATAD = directory for backup data
+
 ```cat <<EOF | sudo tee -a /etc/environment
 BACKUPCONFD=$HOME/cloud/conf
 BACKUPDATAD=$HOME/cloud/data

@@ -7,6 +7,7 @@ Written for my personal use, but hopefully useful to others (directly, or as a r
 Depends on
 ==========
 [rclone](http://rclone.org/), via [Docker](https://hub.docker.com/r/kevineye/rclone/)
+
 [gmvault](http://gmvault.org/), via [Docker](https://hub.docker.com/r/tianon/gmvault/)
 
 Commands
@@ -14,11 +15,13 @@ Commands
 Gmail
 -----
 `gmail full-sync ryan ryan.tomac@gmail.com`
+
 `gmail quick-sync ryan ryan.tomac@gmail.com`
 
 Google Drive
 ------------
 `google-drive copy ryan`
+
 `google-drive sync ryan`
 
 Google Photos
@@ -36,9 +39,10 @@ Github (public repos)
 Bitbucket (public and private repos)
 ------------------------------------
 `bitbucket set-app-password rtomac "password"`
+
 `bitbucket clone-all rtomac`
 
 License
 =======
-MIT
+MIT License
 

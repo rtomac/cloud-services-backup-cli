@@ -6,7 +6,7 @@ function run-gmvault-sync-cmd {
   USER=$1
   GMAIL=$2
   SYNCTYPE=$3
-  run-gmvault sync --type "$SYNCTYPE" --db-dir "$BACKUPDATAD/gmail/$USER" "$GMAIL"
+  run-gmvault sync --type "$SYNCTYPE" --db-dir "$BACKUPDATAD/gmail/$USER" --check-db no "$GMAIL"
 }
 
 COMMAND="$1"

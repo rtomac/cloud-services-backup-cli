@@ -2,15 +2,27 @@
 
 source .environment
 
+function run-rclone-sync-cmd {
+  USER=$1
+  CMDTYPE=$2
+  REMOTE="dropbox-$USER"
+  echo Using rclone remote $REMOTE
+  run-rclone $CMDTYPE --stats 0 "$REMOTE":/ "$BACKUPDATAD/dropbox/$USER"
+}
+
 COMMAND="$1"
 case $COMMAND in
+
+  "copy")
+
+    USER=$2
+    run-rclone-sync-cmd "$USER" copy
+    ;;
 
   "sync")
 
     USER=$2
-    REMOTE="dropbox-$USER"
-    echo Using rclone remote $REMOTE
-    run-rclone sync --stats 0 "$REMOTE":/ "$BACKUPDATAD/dropbox/$USER"
+    run-rclone-sync-cmd "$USER" sync
     ;;
 
   *)

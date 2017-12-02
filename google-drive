@@ -8,7 +8,7 @@ function run-rclone-sync-cmd {
   REMOTE="drive-$USER"
   echo Using rclone remote $REMOTE
   #run-rclone dedupe --stats 0 --dedupe-mode rename "$REMOTE":/
-  run-rclone $CMDTYPE --stats 0 "$REMOTE":/ "$BACKUPDATAD/google-drive/$USER"
+  run-rclone $CMDTYPE --stats 0 --exclude "/Google Photos/" "$REMOTE":/ "$BACKUPDATAD/google-drive/$USER"
 }
 
 COMMAND="$1"

@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import sys
 import urllib
@@ -17,8 +17,8 @@ for repo in response.json():
   if repo['scm'] == 'git':
     repo_url_format = "https://{0}@bitbucket.org/{1}/{2}.git"
     slug = repo['slug']
-    credentials = "{0}:{1}".format(username, urllib.quote_plus(password))
+    credentials = "{0}:{1}".format(username, urllib.parse.quote_plus(password))
     clone_url = repo_url_format.format(credentials, username, slug)
     fetch_url = repo_url_format.format(username, username, slug)
-    print "{0} {1} {2}".format(slug, clone_url, fetch_url)
+    print("{0} {1} {2}".format(slug, clone_url, fetch_url))
 

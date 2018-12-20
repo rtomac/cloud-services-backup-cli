@@ -49,7 +49,7 @@ cd home-cloud-backup
 
 Make executable
 ---------------
-`chmod -R u+x ./src`
+`chmod -R u+x ./bin`
 
 Add env variables
 -----------------

@@ -66,7 +66,10 @@ EOF
 
 Setup auth
 ----------
-Most of these commands require authentication (e.g. OAuth tokens). Run each of them manually once to set that up. (TODO: add more detail here, especially wrt rclone.)
+Most of these commands require authentication (e.g. OAuth tokens). Run each of them manually once to set that up.
+
+Note: For gmvault, you need to setup an OAuth app & credentials of your own. The gmvault project used to have it's own, but Google no longer allows that. See:
+https://github.com/gaubert/gmvault/issues/335#issuecomment-475437988
 
 License
 =======

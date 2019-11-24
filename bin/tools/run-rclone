@@ -6,5 +6,5 @@ mkdir -p "$BACKUPDATAD"
 FLAGS=""
 [[ -t 0 ]] && FLAGS="$FLAGS -i"
 [[ -t 1 ]] && FLAGS="$FLAGS -t"
-docker run $FLAGS --rm --log-driver syslog -v "$BACKUPCONFD"/rclone:/root -v "$BACKUPDATAD":"$BACKUPDATAD" jacobwgillespie/rclone "$@"
+docker run $FLAGS --rm --log-driver syslog -v "$BACKUPCONFD"/rclone:/root -v "$BACKUPDATAD":"$BACKUPDATAD" rclone/rclone "$@"
 

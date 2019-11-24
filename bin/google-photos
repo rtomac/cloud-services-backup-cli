@@ -9,10 +9,9 @@ case $COMMAND in
 
     USER=$2
     YEAR=$3
-    REMOTE="drive-$USER"
+    REMOTE="photos-$USER"
     echo Using rclone remote $REMOTE
-    run-rclone dedupe --stats 0 --dedupe-mode rename "$REMOTE":"Google Photos/$YEAR"
-    run-rclone copy --stats 0 --ignore-existing "$REMOTE":"Google Photos/$YEAR" "$BACKUPDATAD/google-photos/$USER/$YEAR"
+    run-rclone copy --stats 0 --ignore-existing "$REMOTE":"media/by-year/$YEAR" "$BACKUPDATAD/google-photos/$USER/$YEAR"
     ;;
 
   *)

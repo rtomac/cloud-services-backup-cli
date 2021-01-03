@@ -1,58 +1,68 @@
-Overview
-========
-A collection of modules/commands for backing up your data from cloud services to a Linux home server. It's goal is to expose simple, comprehensible commands that can be called from a single shell script to backup all your cloud data.
+# Overview
 
-Written for my personal use, but hopefully useful to others (directly, or as a reference).
+A CLI for backing up your data from popular cloud services to a home server.
 
-Depends on
-==========
-- [rclone](http://rclone.org/), via [Docker](https://hub.docker.com/r/kevineye/rclone/)
+Written for my personal use, but hopefully useful to others.
+
+# Makes use of
+
+- [rclone](http://rclone.org/), via [Docker](https://hub.docker.com/r/rclone/rclone/)
 - [gmvault](http://gmvault.org/), via [Docker](https://hub.docker.com/r/tianon/gmvault/)
 
-Commands
-========
-Gmail
------
-`gmail full-sync ryan ryan.tomac@gmail.com`  
-`gmail quick-sync ryan ryan.tomac@gmail.com`
+# Commands
 
-Google Drive
-------------
-`google-drive copy ryan`  
-`google-drive sync ryan`
+## Gmail
 
-Google Photos
--------------
-`google-photos copy ryan 2016`
+`cloud-services-backup gmail john.doe@gmail.com setup`
 
-Dropbox
--------
-`dropbox sync ryan`
+`cloud-services-backup gmail john.doe@gmail.com sync`
 
-Github (public repos)
----------------------
-`github clone-all rtomac`
+## Google Drive
 
-Bitbucket (public and private repos)
-------------------------------------
-`bitbucket set-app-password rtomac "password"`  
-`bitbucket clone-all rtomac`
+`cloud-services-backup google-drive john.doe@gmail.com setup`
 
-Installation
-============
-Download
---------
+`cloud-services-backup google-drive john.doe@gmail.com sync`
+
+## Google Photos
+
+`cloud-services-backup google-photos john.doe@gmail.com setup`
+
+`cloud-services-backup google-photos john.doe@gmail.com sync 2021`
+
+## Dropbox
+
+`cloud-services-backup dropbox john.doe@gmail.com setup`
+
+`cloud-services-backup dropbox john.doe@gmail.com sync`
+
+## Github
+
+`cloud-services-backup github john.doe setup my_personal_access_token`
+
+`cloud-services-backup github john.doe sync`
+
+## Bitbucket
+
+`cloud-services-backup bitbucket john.doe@gmail.com setup my_app_password`
+
+`cloud-services-backup bitbucket john.doe@gmail.com sync`
+
+# Installation
+
+## Prerequisites
+- Docker engine
+- Python 3
+
+## Download
 ```
 git clone https://github.com/rtomac/home-cloud-backup.git
 cd home-cloud-backup
 ```
 
-Make executable
----------------
+## Make executable
 `chmod -R u+x ./bin`
 
-Add env variables
------------------
+## Add env variables
 These commands require two env variables:
 - BACKUPCONFD = directory for configuration files used by scripts (auth tokens, etc.)
 - BACKUPDATAD = directory for backup data
@@ -64,14 +74,9 @@ BACKUPDATAD=$HOME/cloud/data
 EOF
 ```
 
-Setup auth
-----------
-Most of these commands require authentication (e.g. OAuth tokens). Run each of them manually once to set that up.
-
-Note: For gmvault, you need to setup an OAuth app & credentials of your own. The gmvault project used to have it's own, but Google no longer allows that. See:
-https://github.com/gaubert/gmvault/issues/335#issuecomment-475437988
+## Run setups
+All of these commands require authentication, which is typically an interactive authentication to complete an OAuth authentication flow. Run `setup` for each service interactively to set that up.
 
 License
 =======
 MIT License
-

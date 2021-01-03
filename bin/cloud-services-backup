@@ -1,0 +1,107 @@
+#!/bin/bash
+
+
+# BACKUPCONFD and BACKUPDATAD env variables required
+: "${BACKUPCONFD:?Environment variable BACKUPCONFD is expected}"
+: "${BACKUPDATAD:?Environment variable BACKUPDATAD is expected}"
+mkdir -p "$BACKUPCONFD"
+mkdir -p "$BACKUPDATAD"
+
+
+DIRNAME=$(dirname $(readlink -f $0))
+SERVICESD=${DIRNAME}/services
+TOOLSD=${DIRNAME}/tools
+
+
+source "${TOOLSD}/rclone.sh"
+source "${TOOLSD}/gmvault.sh"
+source "${TOOLSD}/git.sh"
+
+source "${SERVICESD}/gmail.sh"
+source "${SERVICESD}/google-drive.sh"
+source "${SERVICESD}/google-photos.sh"
+source "${SERVICESD}/dropbox.sh"
+source "${SERVICESD}/github.sh"
+source "${SERVICESD}/bitbucket.sh"
+
+
+# Global help
+help() {
+    cat << EOF
+Runs a cloud services backup.
+
+  cloud-services-backup <service> help
+  cloud-services-backup <service> <action>
+
+Supported services:
+gmail
+google-drive
+google-photos
+dropbox
+github
+bitbucket
+EOF
+}
+
+# First arg is "service", second is action/sub-command, and third is username.
+# Bash function dynamically invoked based on service name and action.
+# 
+# Each service must support _cmd_service_help function.
+# Each service can optionally support _cmd_service_init function.
+# Each service should support _cmd_service_action function for each action.
+# 
+# Each service can expect global variables:
+# $SERVICE, $SERVICE_SLUG, $ACTION, $ACTION_SLUG$, $USERNAME, $USERNAME_SLUG, $USER_BACKUPD
+CMD=$1
+case $CMD in
+    "" | "help")
+        help
+        ;;
+    *)
+        SERVICE=$CMD
+        SERVICE_SLUG=${SERVICE//[^[:alnum:]]/}
+
+        FN_HELP=_cmd_${SERVICE_SLUG}_help
+        if !( declare -f $FN_HELP >> /dev/null ); then
+            echo "Error: Invalid service '${SERVICE}'" >&2
+            echo "Use 'help' command for a list of valid services" >&2
+            exit 1
+        fi
+
+        if [ "$#" -eq 1 ] || [ "$2" == "help" ]; then
+            $FN_HELP
+            exit
+        fi
+
+        ACTION=${2:?Action argument required}
+        ACTION_SLUG=${ACTION//[^[:alnum:]]/}
+        
+        USERNAME=${3:?Username argument required}
+        USERNAME_SLUG=${USERNAME//[^[:alnum:]]/_}
+        
+        FN_ACTION=cmd_${SERVICE_SLUG}_${ACTION_SLUG}
+
+        if !( declare -f $FN_ACTION >> /dev/null ); then
+            echo "Error: Service '${SERVICE}' does not support action '${ACTION}'" >&2
+            echo "Use '${SERVICE}' command with 'help' action" >&2
+            exit 1
+        fi
+
+        USER_BACKUPD=${BACKUPDATAD}/${SERVICE_SLUG}/${USERNAME_SLUG}
+        mkdir -p "$USER_BACKUPD"
+
+        echo Using service ${SERVICE}
+        echo For user ${USERNAME}
+        echo Running action ${ACTION}
+        echo Backup target is ${USER_BACKUPD}
+
+        shift 3
+
+        FN_INIT=_cmd_${SERVICE_SLUG}_init
+        if ( declare -f $FN_INIT >> /dev/null ); then
+            $FN_INIT $@
+        fi
+
+        $FN_ACTION $@
+        ;;
+esac

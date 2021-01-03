@@ -1,8 +1,0 @@
-#!/bin/bash
-
-DIRNAME=$(dirname $(readlink -f $0))
-export PATH="$DIRNAME"/helpers:"$DIRNAME"/tools:$PATH
-
-: "${BACKUPCONFD:?Environment variable BACKUPCONFD is required}"
-: "${BACKUPDATAD:?Environment variable BACKUPDATAD is required}"
-

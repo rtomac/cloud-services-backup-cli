@@ -1,9 +1,0 @@
-#!/bin/bash
-
-mkdir -p "$BACKUPCONFD"/gmvault
-mkdir -p "$BACKUPDATAD"
-
-FLAGS=""
-[[ -t 0 ]] && FLAGS="$FLAGS -i"
-[[ -t 1 ]] && FLAGS="$FLAGS -t"
-docker run $FLAGS --rm --log-driver syslog -v "$BACKUPCONFD"/gmvault:/root/.gmvault -v "$BACKUPDATAD":"$BACKUPDATAD" tianon/gmvault "$@"

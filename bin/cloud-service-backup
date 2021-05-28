@@ -1,0 +1,56 @@
+#!/bin/bash
+
+# BACKUPCONFD and BACKUPDATAD env variables required
+: "${BACKUPCONFD:?Environment variable BACKUPCONFD is expected}"
+: "${BACKUPDATAD:?Environment variable BACKUPDATAD is expected}"
+mkdir -p "$BACKUPCONFD"
+mkdir -p "$BACKUPDATAD"
+
+dir_path=$(dirname $(readlink -f $0))
+services_path=${dir_path}/.cloud-service-backup/services
+tools_path=${dir_path}/.cloud-service-backup/tools
+
+source "${tools_path}/rclone.sh"
+source "${tools_path}/gmvault.sh"
+source "${tools_path}/git.sh"
+
+source "${services_path}/gmail.sh"
+source "${services_path}/google-drive.sh"
+source "${services_path}/google-photos.sh"
+source "${services_path}/dropbox.sh"
+source "${services_path}/github.sh"
+source "${services_path}/bitbucket.sh"
+
+help() {
+    cat << EOF
+Runs a cloud service backup.
+
+Organizes backups in $BACKUPDATAD and configuration
+in $BACKUPCONFD.
+
+Supported services/commands:
+  cloud-service-backup gmail foo.bar@gmail.com quick|full
+  cloud-service-backup google-drive foo.bar@gmail.com
+  cloud-service-backup google-photos foo.bar@gmail.com <year>
+  cloud-service-backup dropbox foo.bar@gmail.com
+  cloud-service-backup github foo.bar
+  cloud-service-backup bitbucket foo.bar
+
+Each command should be run interactive the first time (for
+authentication, etc.) and can be run unattended after that.
+EOF
+}
+
+cmd=$1
+case $cmd in
+    "" | "help")
+        help
+        ;;
+    *)
+        cmd_slug=${cmd//[^[:alnum:]]/_}
+        fn_cmd=cmd_${cmd_slug}
+
+        shift
+        $fn_cmd $@
+        ;;
+esac

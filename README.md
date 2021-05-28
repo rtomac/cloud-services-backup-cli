@@ -38,7 +38,7 @@ cd cloud-services-backup-cli
 ```
 
 ## Make executable
-`chmod -R u+x ./bin`
+`chmod u+x ./bin/cloud-service-backup`
 
 ## Add env variables
 

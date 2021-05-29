@@ -6,7 +6,7 @@ function cmd_google_drive {
     user_backupd=${BACKUPDATAD}/${app_slug}/${user_slug}
     rclone_remote=${app_slug}-${user_slug}
 
-    if [ ! `_check_rclone_remote ${rclone_remote}` ]; then
+    if ! _check_rclone_remote "${rclone_remote}"; then
         _run_rclone config create ${rclone_remote} drive client_id "${GOOGLE_OAUTH_CLIENT_ID}" client_secret "${GOOGLE_OAUTH_CLIENT_SECRET}" scope drive.readonly config_is_local false
         echo "Created rclone remote ${rclone_remote}"
     fi

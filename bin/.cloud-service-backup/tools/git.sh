@@ -7,7 +7,7 @@ function _ensure_git_access_token {
     : "${credentials_file:?credentials_file env variable expected}"
 
     if [ ! -f "${access_token_file}" ] || [ ! -f "${credentials_file}" ]; then
-        echo "Enter git access token:"
+        echo "Enter access token:"
         read access_token
 
         echo -n "${access_token}" > "${access_token_file}"

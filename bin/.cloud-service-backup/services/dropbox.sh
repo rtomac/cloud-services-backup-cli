@@ -6,7 +6,7 @@ function cmd_dropbox {
     user_backupd=${BACKUPDATAD}/${app_slug}/${user_slug}
     rclone_remote=${app_slug}-${user_slug}
 
-    if [ ! `_check_rclone_remote ${rclone_remote}` ]; then
+    if ! _check_rclone_remote "${rclone_remote}"; then
         _run_rclone config create "${rclone_remote}" dropbox config_is_local false
         echo "Created rclone remote ${rclone_remote}"
     fi

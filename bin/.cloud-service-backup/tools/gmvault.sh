@@ -10,6 +10,8 @@ function _run_gmvault {
     [ -t 1 ] && flags+=" -t" # stdout is a terminal
 
     docker build -t gmvault_arm64 github.com/rtomac/gmvault-docker-arm64.git#main > /dev/null
+    
+    echo Running: gmvault $@
     docker run ${flags} \
         -v /etc/localtime:/etc/localtime:ro \
         -v "${user_confd}":/root/.gmvault \

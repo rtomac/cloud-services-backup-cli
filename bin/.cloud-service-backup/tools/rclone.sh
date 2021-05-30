@@ -7,6 +7,7 @@ function _run_rclone {
     [ -t 0 ] && flags+=" -i" # stdin is a terminal
     [ -t 1 ] && flags+=" -t" # stdout is a terminal
 
+    echo Running: rclone $@
     docker run ${flags} \
         -v /etc/localtime:/etc/localtime:ro \
         -v "${rclone_confd}":/config/rclone/ \

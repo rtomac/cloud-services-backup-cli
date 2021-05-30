@@ -1,5 +1,11 @@
+# Fetches repos owned by the specified user and clones
+# them as bare repositories locally.
+#
+# In "sync" mode, all local repos will be removed and all
+# repos within GitHub will be re-cloned.
 function cmd_github {
     github_username=${1:?github_username arg required}
+    operation=${2:-update}
 
     user_slug=${github_username//[^[:alnum:]]/_}
     user_confd=${BACKUPCONFD}/github/${user_slug}
@@ -16,6 +22,9 @@ function cmd_github {
 
     access_token=`cat ${access_token_file}`
     python3 "${tools_path}/list-github-repos.py" "${github_username}" "${access_token}" > ${repos_file}
+
+    [ "${operation}" = "sync" ] && rm -r "${user_backupd}" && mkdir -p "${user_backupd}" \
+        && echo "Removed existing git repos"
 
     _mirror_git_repos ${repos_file}
 }

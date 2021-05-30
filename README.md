@@ -20,9 +20,9 @@ Written for my personal use, but hopefully useful to others.
 ## Dropbox
 `cloud-service-backup dropbox foo.bar@gmail.com [copy|sync]`
 ## Github
-`cloud-service-backup github foo.bar`
+`cloud-service-backup github foo.bar [update|sync]`
 ## Bitbucket
-`cloud-service-backup bitbucket foo.bar`
+`cloud-service-backup bitbucket foo.bar [update|sync]`
 
 # Installation
 

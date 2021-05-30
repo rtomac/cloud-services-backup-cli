@@ -1,5 +1,14 @@
+# Runs an `rclone copy` or `rclone sync`.
+#
+# In "copy" mode, copies all new and modified files from Google Drive
+# to local, but does not delete files locally (protects
+# against accidental or malicious deletion in Google Drive).
+#
+# In "sync" mode, copies all new and modified files and deletes
+# all files locally which have been deleted in Google Drive.
 function cmd_google_drive {
     google_username=${1:?google_username arg required}
+    operation=${2:-copy}
 
     app_slug=google_drive
     user_slug=${google_username//[^[:alnum:]]/_}
@@ -13,5 +22,5 @@ function cmd_google_drive {
 
     echo "Using config at ${rclone_confd} with rclone remote ${rclone_remote}"
     echo "Backing up to ${user_backupd}"
-    _run_rclone copy --stats 0 --exclude "/Google Photos/" "${rclone_remote}":/ "${user_backupd}"
+    _run_rclone ${operation} --stats 0 --exclude "/Google Photos/" "${rclone_remote}":/ "${user_backupd}"
 }

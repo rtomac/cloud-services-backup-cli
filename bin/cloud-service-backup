@@ -29,10 +29,10 @@ Organizes backups in $BACKUPDATAD and configuration
 in $BACKUPCONFD.
 
 Supported services/commands:
-  cloud-service-backup gmail foo.bar@gmail.com quick|full
-  cloud-service-backup google-drive foo.bar@gmail.com
-  cloud-service-backup google-photos foo.bar@gmail.com <year>
-  cloud-service-backup dropbox foo.bar@gmail.com
+  cloud-service-backup gmail foo.bar@gmail.com [quick|full]
+  cloud-service-backup google-drive foo.bar@gmail.com [copy|sync]
+  cloud-service-backup google-photos foo.bar@gmail.com <year> [copy|sync]
+  cloud-service-backup dropbox foo.bar@gmail.com [copy|sync]
   cloud-service-backup github foo.bar
   cloud-service-backup bitbucket foo.bar
 

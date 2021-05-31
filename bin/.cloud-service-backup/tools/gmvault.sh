@@ -1,3 +1,5 @@
+gmvault_built=0
+
 function _run_gmvault {
     : "${user_confd:?user_confd env variable expected}"
     : "${user_backupd:?user_confd env variable expected}"
@@ -9,7 +11,11 @@ function _run_gmvault {
     [ -t 0 ] && flags+=" -i" # stdin is a terminal
     [ -t 1 ] && flags+=" -t" # stdout is a terminal
 
-    docker build -t gmvault_arm64 github.com/rtomac/gmvault-docker-arm64.git#main > /dev/null
+    if [ "${gmvault_built}" == "0" ]; then
+        docker build -t gmvault_arm64 github.com/rtomac/gmvault-docker-arm64.git#main > /dev/null
+        gmvault_built=1
+        echo "Rebuilt gmvault container"
+    fi
     
     echo Running: gmvault $@
     docker run ${flags} \

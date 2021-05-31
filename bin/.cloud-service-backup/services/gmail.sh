@@ -1,6 +1,6 @@
 # Runs a `gmvault sync`.
 #
-# In "update" mode, syncs the last 10 days worth of new email
+# In "copy" mode, syncs the last 10 days worth of new email
 # and won't delete any deleted messages (protects against
 # accidental or malicious deletion in Gmail).
 #
@@ -8,8 +8,8 @@
 # which have been deleted in Gmail.
 function cmd_gmail {
     gmail_address=${1:?gmail_address arg required}
-    mode=${2:-update}
-    [ "${mode}" != "update" ] && [ "${mode}" != "sync" ] && echo "Invalid mode" && exit 1
+    mode=${2:-copy}
+    [ "${mode}" != "copy" ] && [ "${mode}" != "sync" ] && echo "Invalid mode" && exit 1
 
     user_slug=${gmail_address//[^[:alnum:]]/_}
     user_confd=${BACKUPCONFD}/gmvault/${user_slug}

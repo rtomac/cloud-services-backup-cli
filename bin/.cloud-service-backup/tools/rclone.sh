@@ -3,12 +3,12 @@ rclone_confd=${BACKUPCONFD}/rclone
 function _run_rclone {
     mkdir -p ${rclone_confd}
 
-    flags="--rm"
-    [ -t 0 ] && flags+=" -i" # stdin is a terminal
-    [ -t 1 ] && flags+=" -t" # stdout is a terminal
+    docker_flags="--rm"
+    [ -t 0 ] && docker_flags+=" -i" # stdin is a terminal
+    [ -t 1 ] && docker_flags+=" -t" # stdout is a terminal
 
     echo Running: rclone $@
-    docker run ${flags} \
+    docker run ${docker_flags} \
         -v /etc/localtime:/etc/localtime:ro \
         -v "${rclone_confd}":/config/rclone/ \
         -v "${BACKUPDATAD}":"${BACKUPDATAD}" \

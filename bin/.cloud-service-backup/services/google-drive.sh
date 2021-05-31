@@ -1,6 +1,6 @@
 # Runs an `rclone copy` or `rclone sync`.
 #
-# In "update" mode, copies all new and modified files from Google Drive
+# In "copy" mode, copies all new and modified files from Google Drive
 # to local, but does not delete files locally (protects
 # against accidental or malicious deletion in Google Drive).
 #
@@ -8,8 +8,8 @@
 # all files locally which have been deleted in Google Drive.
 function cmd_google_drive {
     google_username=${1:?google_username arg required}
-    mode=${2:-update}
-    [ "${mode}" != "update" ] && [ "${mode}" != "sync" ] && echo "Invalid mode" && exit 1
+    mode=${2:-copy}
+    [ "${mode}" != "copy" ] && [ "${mode}" != "sync" ] && echo "Invalid mode" && exit 1
 
     app_slug=google_drive
     user_slug=${google_username//[^[:alnum:]]/_}

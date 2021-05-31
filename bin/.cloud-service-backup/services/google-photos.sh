@@ -1,6 +1,6 @@
 # Runs an `rclone copy` or `rclone sync`.
 #
-# In "update" mode, copies all new files from Google Photos
+# In "copy" mode, copies all new files from Google Photos
 # to local, but does not copy modified files (considered unlikely)
 # or delete files locally (protects against accidental or malicious
 # deletion in Google Photos).
@@ -10,8 +10,8 @@
 function cmd_google_photos {
     google_username=${1:?google_username arg required}
     year=${2:?year arg required}
-    mode=${3:-update}
-    [ "${mode}" != "update" ] && [ "${mode}" != "sync" ] && echo "Invalid mode" && exit 1
+    mode=${3:-copy}
+    [ "${mode}" != "copy" ] && [ "${mode}" != "sync" ] && echo "Invalid mode" && exit 1
 
     app_slug=google_photos
     user_slug=${google_username//[^[:alnum:]]/_}
@@ -27,7 +27,7 @@ function cmd_google_photos {
     operation=copy
     flags=""
     [ "${mode}" == "sync" ] && operation=sync
-    [ "${mode}" == "update" ] && flags+=" --ignore-existing"
+    [ "${mode}" == "copy" ] && flags+=" --ignore-existing"
 
     echo "Using config at ${rclone_confd} with rclone remote ${rclone_remote}"
     echo "Backing up to ${year_backupd}"

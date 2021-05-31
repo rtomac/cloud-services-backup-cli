@@ -7,9 +7,9 @@ function _run_gmvault {
     mkdir -p "${user_confd}"
     mkdir -p "${user_backupd}"
 
-    flags="--rm"
-    [ -t 0 ] && flags+=" -i" # stdin is a terminal
-    [ -t 1 ] && flags+=" -t" # stdout is a terminal
+    docker_flags="--rm"
+    [ -t 0 ] && docker_flags+=" -i" # stdin is a terminal
+    [ -t 1 ] && docker_flags+=" -t" # stdout is a terminal
 
     if [ "${gmvault_built}" == "0" ]; then
         docker build -t gmvault_arm64 github.com/rtomac/gmvault-docker-arm64.git#main > /dev/null
@@ -18,7 +18,7 @@ function _run_gmvault {
     fi
     
     echo Running: gmvault $@
-    docker run ${flags} \
+    docker run ${docker_flags} \
         -v /etc/localtime:/etc/localtime:ro \
         -v "${user_confd}":/root/.gmvault \
         -v "${user_backupd}":/root/gmvault-db \

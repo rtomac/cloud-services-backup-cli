@@ -5,7 +5,8 @@
 # repos within Bitbucket will be re-cloned.
 function cmd_bitbucket {
     bitbucket_username=${1:?bitbucket_username arg required}
-    operation=${2:-update}
+    mode=${2:-update}
+    [ "${mode}" != "update" ] && [ "${mode}" != "sync" ] && echo "Invalid mode" && exit 1
 
     user_slug=${bitbucket_username//[^[:alnum:]]/_}
     user_confd=${BACKUPCONFD}/bitbucket/${user_slug}
@@ -23,7 +24,7 @@ function cmd_bitbucket {
     access_token=`cat ${access_token_file}`
     python3 "${tools_path}/list-bitbucket-repos.py" "${bitbucket_username}" "${access_token}" > ${repos_file}
 
-    [ "${operation}" = "sync" ] && rm -r "${user_backupd}" && mkdir -p "${user_backupd}" \
+    [ "${mode}" == "sync" ] && rm -r "${user_backupd}" && mkdir -p "${user_backupd}" \
         && echo "Removed existing git repos"
 
     _mirror_git_repos ${repos_file}

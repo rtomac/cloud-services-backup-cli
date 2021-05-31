@@ -12,13 +12,13 @@ Written for my personal use, but hopefully useful to others.
 # Commands
 
 ## Gmail
-`cloud-service-backup gmail foo.bar@gmail.com [quick|full]`
+`cloud-service-backup gmail foo.bar@gmail.com [update|sync]`
 ## Google Drive
-`cloud-service-backup google-drive foo.bar@gmail.com [copy|sync]`
+`cloud-service-backup google-drive foo.bar@gmail.com [update|sync]`
 ## Google Photos
-`cloud-service-backup google-photos foo.bar@gmail.com <year> [copy|sync]`
+`cloud-service-backup google-photos foo.bar@gmail.com <year> [update|sync]`
 ## Dropbox
-`cloud-service-backup dropbox foo.bar@gmail.com [copy|sync]`
+`cloud-service-backup dropbox foo.bar@gmail.com [update|sync]`
 ## Github
 `cloud-service-backup github foo.bar [update|sync]`
 ## Bitbucket

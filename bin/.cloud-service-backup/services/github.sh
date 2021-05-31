@@ -5,7 +5,8 @@
 # repos within GitHub will be re-cloned.
 function cmd_github {
     github_username=${1:?github_username arg required}
-    operation=${2:-update}
+    mode=${2:-update}
+    [ "${mode}" != "update" ] && [ "${mode}" != "sync" ] && echo "Invalid mode" && exit 1
 
     user_slug=${github_username//[^[:alnum:]]/_}
     user_confd=${BACKUPCONFD}/github/${user_slug}
@@ -23,7 +24,7 @@ function cmd_github {
     access_token=`cat ${access_token_file}`
     python3 "${tools_path}/list-github-repos.py" "${github_username}" "${access_token}" > ${repos_file}
 
-    [ "${operation}" = "sync" ] && rm -r "${user_backupd}" && mkdir -p "${user_backupd}" \
+    [ "${mode}" == "sync" ] && rm -r "${user_backupd}" && mkdir -p "${user_backupd}" \
         && echo "Removed existing git repos"
 
     _mirror_git_repos ${repos_file}

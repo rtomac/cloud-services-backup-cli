@@ -12,7 +12,7 @@ function _run_gmvault {
     [ -t 1 ] && docker_flags+=" -t" # stdout is a terminal
 
     if [ "${gmvault_built}" == "0" ]; then
-        docker build -t gmvault_arm64 github.com/rtomac/gmvault-docker-arm64.git#main > /dev/null
+        docker build -t gmvault_arm64:local github.com/rtomac/gmvault-docker-arm64.git#main > /dev/null
         gmvault_built=1
         echo "Rebuilt gmvault container"
     fi
@@ -24,5 +24,5 @@ function _run_gmvault {
         -v "${user_backupd}":/root/gmvault-db \
         -e GMVAULT_CLIENT_ID=${GOOGLE_OAUTH_CLIENT_ID} \
         -e GMVAULT_CLIENT_SECRET=${GOOGLE_OAUTH_CLIENT_SECRET} \
-        gmvault_arm64 "$@"
+        gmvault_arm64:local "$@"
 }

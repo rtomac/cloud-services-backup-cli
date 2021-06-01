@@ -1,6 +1,7 @@
 Runs a backup operation for data in the specified cloud service.
 
 Usage:
+  cloud-service-backup help
   cloud-service-backup <service> <mode> <args>...
   cloud-service-backup gmail (copy|sync) foo.bar@gmail.com
   cloud-service-backup google-drive (copy|sync) foo.bar@gmail.com

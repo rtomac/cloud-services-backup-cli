@@ -31,5 +31,5 @@ function cmd_google_photos {
 
     echo "Using config at ${rclone_confd} with rclone remote ${rclone_remote}"
     echo "Backing up to ${year_backupd}"
-    _run_rclone ${operation} --stats 0 ${flags} "${rclone_remote}":"media/by-year/${year}" "${year_backupd}"
+    _run_rclone ${operation} --stats-log-level NOTICE --stats 10m ${flags} "${rclone_remote}":"media/by-year/${year}" "${year_backupd}"
 }

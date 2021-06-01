@@ -26,5 +26,5 @@ function cmd_google_drive {
 
     echo "Using config at ${rclone_confd} with rclone remote ${rclone_remote}"
     echo "Backing up to ${user_backupd}"
-    _run_rclone ${operation} --stats 0 --exclude "/Google Photos/" "${rclone_remote}":/ "${user_backupd}"
+    _run_rclone ${operation} --stats-log-level NOTICE --stats 10m --exclude "/Google Photos/" "${rclone_remote}":/ "${user_backupd}"
 }

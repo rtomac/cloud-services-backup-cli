@@ -26,5 +26,5 @@ function cmd_dropbox {
 
     echo "Using config at ${rclone_confd} with rclone remote ${rclone_remote}"
     echo "Backing up to ${user_backupd}"
-    _run_rclone ${operation} --stats 0 "${rclone_remote}":/ "${user_backupd}"
+    _run_rclone ${operation} --stats-log-level NOTICE --stats 10m "${rclone_remote}":/ "${user_backupd}"
 }

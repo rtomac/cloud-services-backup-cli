@@ -1,14 +1,14 @@
 Runs a backup operation for data in the specified cloud service.
 
 Usage:
-  cloud-service-backup help
   cloud-service-backup <service> <mode> <args>...
-  cloud-service-backup gmail (copy|sync) foo.bar@gmail.com
-  cloud-service-backup google-drive (copy|sync) foo.bar@gmail.com
-  cloud-service-backup google-photos (copy|sync) foo.bar@gmail.com <year>
-  cloud-service-backup dropbox (copy|sync) foo.bar@gmail.com
-  cloud-service-backup github (copy|sync) foo.bar
-  cloud-service-backup bitbucket (copy|sync) foo.bar
+  cloud-service-backup gmail (copy|sync) <gmail_addr>
+  cloud-service-backup google-drive (copy|sync) <google_username>
+  cloud-service-backup google-photos (copy|sync) <google_username> <year>
+  cloud-service-backup dropbox (copy|sync) <dropbox_username>
+  cloud-service-backup github (copy|sync) <github_username>
+  cloud-service-backup bitbucket (copy|sync) <bitbucket_username>
+  cloud-service-backup help
 
 Environment variables:
   BACKUPDATAD: Required. The directory into which backup data for

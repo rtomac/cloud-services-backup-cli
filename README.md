@@ -23,9 +23,9 @@ The following services/commands are supported:
 ## Google Drive
 `cloud-service-backup google-drive (copy|sync) foo.bar@gmail.com`
 ## Google Photos
-`cloud-service-backup google-photos (copy|sync) foo.bar@gmail.com <year>`
+`cloud-service-backup google-photos (copy|sync) foo.bar@gmail.com 2020`
 ## Dropbox
-`cloud-service-backup dropbox (copy|sync) foo.bar@gmail.com`
+`cloud-service-backup dropbox (copy|sync) foo.bar`
 ## Github
 `cloud-service-backup github (copy|sync) foo.bar`
 ## Bitbucket

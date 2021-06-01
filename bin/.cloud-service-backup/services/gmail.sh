@@ -8,8 +8,6 @@
 # which have been deleted in Gmail.
 function cmd_gmail {
     gmail_address=${1:?gmail_address arg required}
-    mode=${2:-copy}
-    [ "${mode}" != "copy" ] && [ "${mode}" != "sync" ] && echo "Invalid mode" && exit 1
 
     user_slug=${gmail_address//[^[:alnum:]]/_}
     user_confd=${BACKUPCONFD}/gmvault/${user_slug}

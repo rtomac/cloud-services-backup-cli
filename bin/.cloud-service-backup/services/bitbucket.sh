@@ -5,8 +5,6 @@
 # repos within Bitbucket will be re-cloned.
 function cmd_bitbucket {
     bitbucket_username=${1:?bitbucket_username arg required}
-    mode=${2:-copy}
-    [ "${mode}" != "copy" ] && [ "${mode}" != "sync" ] && echo "Invalid mode" && exit 1
 
     user_slug=${bitbucket_username//[^[:alnum:]]/_}
     user_confd=${BACKUPCONFD}/bitbucket/${user_slug}

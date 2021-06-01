@@ -1,28 +1,37 @@
 # Overview
 
-A CLI for backing up data from popular cloud services to a local server.
+A command-line interface for backing up data from popular cloud services to a local server.
 
-Written for my personal use, but hopefully useful to others.
+Features:
+- Provides a simple and uniform CLI across all services (e.g. gmail) and irrespective of underlying tool used to back up the data (e.g. gmvault).
+- Provides "copy" and "sync" modes for each service, to support both non-destructive backups as well as full syncronization.
+- Automatically organizes configuration data and backup data into specified top-level directories.
 
-# Makes use of
+# How it works
 
+This CLI uses a combination of existing tools, vendor APIs, and custom scripts to do its work.
+
+Makes use of these \[excellent\] existing tools:
 - [rclone](http://rclone.org/), via [Docker](https://hub.docker.com/r/rclone/rclone/)
-- [gmvault](http://gmvault.org/), via [Docker](https://hub.docker.com/r/tianon/gmvault/)
+- [gmvault](http://gmvault.org/), via Docker
 
 # Commands
 
+The following services/commands are supported:
 ## Gmail
-`cloud-service-backup gmail foo.bar@gmail.com [copy|sync]`
+`cloud-service-backup gmail (copy|sync) foo.bar@gmail.com`
 ## Google Drive
-`cloud-service-backup google-drive foo.bar@gmail.com [copy|sync]`
+`cloud-service-backup google-drive (copy|sync) foo.bar@gmail.com`
 ## Google Photos
-`cloud-service-backup google-photos foo.bar@gmail.com <year> [copy|sync]`
+`cloud-service-backup google-photos (copy|sync) foo.bar@gmail.com <year>`
 ## Dropbox
-`cloud-service-backup dropbox foo.bar@gmail.com [copy|sync]`
+`cloud-service-backup dropbox (copy|sync) foo.bar@gmail.com`
 ## Github
-`cloud-service-backup github foo.bar [copy|sync]`
+`cloud-service-backup github (copy|sync) foo.bar`
 ## Bitbucket
-`cloud-service-backup bitbucket foo.bar [copy|sync]`
+`cloud-service-backup bitbucket (copy|sync) foo.bar`
+
+See the [CLI readme](bin/.cloud-service-backup/readme.txt) for full usage and other notes.
 
 # Installation
 
@@ -38,14 +47,13 @@ cd cloud-services-backup-cli
 ```
 
 ## Make executable
-`chmod u+x ./bin/cloud-service-backup`
+```
+chmod u+x ./bin/cloud-service-backup
+```
 
 ## Add env variables
 
-The CLI organizes backups and configuration in the following
-two directories. These environment variables are required.
-- BACKUPCONFD = directory for configuration files used by scripts (auth tokens, etc.)
-- BACKUPDATAD = directory for backup data
+The CLI organizes backups and configuration in two top-level directories. See the [CLI readme](bin/.cloud-service-backup/readme.txt) for more info.
 
 ```
 cat <<EOF | sudo tee -a /etc/environment
@@ -60,6 +68,6 @@ Each of these command require an authentication when first run (typically
 an OAuth authentication flow). Run each command interactively the first time,
 unattended after that.
 
-License
-=======
+# License
+
 MIT License

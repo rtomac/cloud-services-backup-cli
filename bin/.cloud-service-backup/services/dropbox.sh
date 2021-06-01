@@ -8,8 +8,6 @@
 # all files locally which have been deleted in Dropbox.
 function cmd_dropbox {
     dropbox_username=${1:?dropbox_username arg required}
-    mode=${2:-copy}
-    [ "${mode}" != "copy" ] && [ "${mode}" != "sync" ] && echo "Invalid mode" && exit 1
 
     app_slug=dropbox
     user_slug=${dropbox_username//[^[:alnum:]]/_}

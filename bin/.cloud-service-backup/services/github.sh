@@ -5,8 +5,6 @@
 # repos within GitHub will be re-cloned.
 function cmd_github {
     github_username=${1:?github_username arg required}
-    mode=${2:-copy}
-    [ "${mode}" != "copy" ] && [ "${mode}" != "sync" ] && echo "Invalid mode" && exit 1
 
     user_slug=${github_username//[^[:alnum:]]/_}
     user_confd=${BACKUPCONFD}/github/${user_slug}

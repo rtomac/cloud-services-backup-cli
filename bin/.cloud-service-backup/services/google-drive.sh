@@ -8,8 +8,6 @@
 # all files locally which have been deleted in Google Drive.
 function cmd_google_drive {
     google_username=${1:?google_username arg required}
-    mode=${2:-copy}
-    [ "${mode}" != "copy" ] && [ "${mode}" != "sync" ] && echo "Invalid mode" && exit 1
 
     app_slug=google_drive
     user_slug=${google_username//[^[:alnum:]]/_}

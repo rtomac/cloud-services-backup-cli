@@ -1,14 +1,14 @@
 #!/bin/bash
 
-# BACKUPCONFD and BACKUPDATAD env variables required
 : "${BACKUPCONFD:?Environment variable BACKUPCONFD is expected}"
 : "${BACKUPDATAD:?Environment variable BACKUPDATAD is expected}"
 mkdir -p "$BACKUPCONFD"
 mkdir -p "$BACKUPDATAD"
 
 dir_path=$(dirname $(readlink -f $0))
-services_path=${dir_path}/.cloud-service-backup/services
-tools_path=${dir_path}/.cloud-service-backup/tools
+support_path=${dir_path}/.cloud-service-backup
+services_path=${support_path}/services
+tools_path=${support_path}/tools
 
 source "${tools_path}/rclone.sh"
 source "${tools_path}/gmvault.sh"
@@ -21,36 +21,19 @@ source "${services_path}/dropbox.sh"
 source "${services_path}/github.sh"
 source "${services_path}/bitbucket.sh"
 
-help() {
-    cat << EOF
-Runs a cloud service backup.
-
-Organizes backups in $BACKUPDATAD and configuration
-in $BACKUPCONFD.
-
-Supported services/commands:
-  cloud-service-backup gmail foo.bar@gmail.com [copy|sync]
-  cloud-service-backup google-drive foo.bar@gmail.com [copy|sync]
-  cloud-service-backup google-photos foo.bar@gmail.com <year> [copy|sync]
-  cloud-service-backup dropbox foo.bar@gmail.com [copy|sync]
-  cloud-service-backup github foo.bar [copy|sync]
-  cloud-service-backup bitbucket foo.bar [copy|sync]
-
-Each command should be run interactive the first time (for
-authentication, etc.) and can be run unattended after that.
-EOF
-}
-
 cmd=$1
 case $cmd in
     "" | "help")
-        help
+        cat "${support_path}/readme.txt"
         ;;
     *)
         cmd_slug=${cmd//[^[:alnum:]]/_}
         fn_cmd=cmd_${cmd_slug}
 
-        shift
+        mode=${2:?"mode argument is required"}
+        [ "${mode}" != "copy" ] && [ "${mode}" != "sync" ] && ( echo "Invalid mode argument, must be one of (copy|sync)" 1>&2 ) && exit 1
+
+        shift 2
         $fn_cmd $@
         ;;
 esac

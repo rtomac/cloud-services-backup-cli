@@ -10,8 +10,6 @@
 function cmd_google_photos {
     google_username=${1:?google_username arg required}
     year=${2:?year arg required}
-    mode=${3:-copy}
-    [ "${mode}" != "copy" ] && [ "${mode}" != "sync" ] && echo "Invalid mode" && exit 1
 
     app_slug=google_photos
     user_slug=${google_username//[^[:alnum:]]/_}

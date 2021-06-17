@@ -1,4 +1,4 @@
-function _run_gmvault {
+function _run_gcalvault {
     : "${user_confd:?user_confd env variable expected}"
     : "${user_backupd:?user_confd env variable expected}"
 
@@ -9,12 +9,10 @@ function _run_gmvault {
     [ -t 0 ] && docker_flags+=" -i" # stdin is a terminal
     [ -t 1 ] && docker_flags+=" -t" # stdout is a terminal
 
-    echo Running: gmvault "$@"
+    echo Running: gcalvault "$@"
     docker run ${docker_flags} \
         -v /etc/localtime:/etc/localtime:ro \
-        -v "${user_confd}":/root/.gmvault \
-        -v "${user_backupd}":/root/gmvault-db \
-        -e GOOGLEOAUTH2__GMVAULT_CLIENT_ID=${GOOGLE_OAUTH_CLIENT_ID} \
-        -e GOOGLEOAUTH2__GMVAULT_CLIENT_SECRET=${GOOGLE_OAUTH_CLIENT_SECRET} \
-        rtomac/gmvault "$@"
+        -v "${user_confd}":/root/.gcalvault \
+        -v "${user_backupd}":/root/gcalvault \
+        rtomac/gcalvault "$@"
 }

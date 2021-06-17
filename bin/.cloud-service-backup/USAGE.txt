@@ -3,6 +3,7 @@ Runs a backup operation for data in the specified cloud service.
 Usage:
   cloud-service-backup <service> <mode> <args>...
   cloud-service-backup gmail (copy|sync) <gmail_addr>
+  cloud-service-backup google-calendar (copy|sync) <google_username>
   cloud-service-backup google-drive (copy|sync) <google_username>
   cloud-service-backup google-photos (copy|sync) <google_username> <year>
   cloud-service-backup dropbox (copy|sync) <dropbox_username>

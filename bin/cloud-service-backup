@@ -12,9 +12,11 @@ tools_path=${support_path}/tools
 
 source "${tools_path}/rclone.sh"
 source "${tools_path}/gmvault.sh"
+source "${tools_path}/gcalvault.sh"
 source "${tools_path}/git.sh"
 
 source "${services_path}/gmail.sh"
+source "${services_path}/google-calendar.sh"
 source "${services_path}/google-drive.sh"
 source "${services_path}/google-photos.sh"
 source "${services_path}/dropbox.sh"
@@ -24,7 +26,7 @@ source "${services_path}/bitbucket.sh"
 cmd=$1
 case $cmd in
     "" | "help")
-        cat "${support_path}/readme.txt"
+        cat "${support_path}/USAGE.txt"
         ;;
     *)
         cmd_slug=${cmd//[^[:alnum:]]/_}

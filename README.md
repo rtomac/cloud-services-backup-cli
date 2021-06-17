@@ -11,27 +11,37 @@ Features:
 
 This CLI uses a combination of existing tools, vendor APIs, and custom scripts to do its work.
 
-Makes use of these \[excellent\] existing tools:
+Makes use of the following tools:
 - [rclone](http://rclone.org/), via [Docker](https://hub.docker.com/r/rclone/rclone/)
-- [gmvault](http://gmvault.org/), via Docker
+- [gmvault](http://gmvault.org/), via [Docker](https://hub.docker.com/r/rtomac/gmvault)
+- [gcalvault](https://github.com/rtomac/gcalvault), via [Docker](https://hub.docker.com/r/rtomac/gcalvault)
 
 # Commands
 
 The following services/commands are supported:
+
 ## Gmail
 `cloud-service-backup gmail (copy|sync) foo.bar@gmail.com`
+
+## Google Calendar
+`cloud-service-backup google-calendar (copy|sync) foo.bar@gmail.com`
+
 ## Google Drive
 `cloud-service-backup google-drive (copy|sync) foo.bar@gmail.com`
+
 ## Google Photos
 `cloud-service-backup google-photos (copy|sync) foo.bar@gmail.com 2020`
+
 ## Dropbox
 `cloud-service-backup dropbox (copy|sync) foo.bar`
+
 ## Github
 `cloud-service-backup github (copy|sync) foo.bar`
+
 ## Bitbucket
 `cloud-service-backup bitbucket (copy|sync) foo.bar`
 
-See the [CLI readme](bin/.cloud-service-backup/readme.txt) for full usage and other notes.
+See the [CLI help](bin/.cloud-service-backup/USAGE.txt) for full usage and other notes.
 
 # Installation
 
@@ -53,7 +63,7 @@ chmod u+x ./bin/cloud-service-backup
 
 ## Add env variables
 
-The CLI organizes backups and configuration in two top-level directories. See the [CLI readme](bin/.cloud-service-backup/readme.txt) for more info.
+The CLI organizes backups and configuration in two top-level directories. See the [CLI help](bin/.cloud-service-backup/USAGE.txt) for more info.
 
 ```
 cat <<EOF | sudo tee -a /etc/environment

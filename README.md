@@ -26,6 +26,9 @@ The following services/commands are supported:
 ## Google Calendar
 `cloud-service-backup google-calendar (copy|sync) foo.bar@gmail.com`
 
+## Google Contacts
+`cloud-service-backup google-contacts (copy|sync) foo.bar@gmail.com`
+
 ## Google Drive
 `cloud-service-backup google-drive (copy|sync) foo.bar@gmail.com`
 

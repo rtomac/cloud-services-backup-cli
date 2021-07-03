@@ -4,6 +4,7 @@ Usage:
   cloud-service-backup <service> <mode> <args>...
   cloud-service-backup gmail (copy|sync) <gmail_addr>
   cloud-service-backup google-calendar (copy|sync) <google_username>
+  cloud-service-backup google-contacts (copy|sync) <google_username>
   cloud-service-backup google-drive (copy|sync) <google_username>
   cloud-service-backup google-photos (copy|sync) <google_username> <year>
   cloud-service-backup dropbox (copy|sync) <dropbox_username>
@@ -21,7 +22,7 @@ Environment variables:
                OAuth app for auth tokens.
   GOOGLE_OAUTH_CLIENT_SECRET:
                Optional. Client secret for client ID above.
-        
+
 The <mode> argument can be either "copy" or "sync". While this may
 means slightly different things for each service, in general it means:
   copy: Non-destructive copy from remote service to local disk.

@@ -15,6 +15,7 @@ Makes use of the following tools:
 - [rclone](http://rclone.org/), via [Docker](https://hub.docker.com/r/rclone/rclone/)
 - [gmvault](http://gmvault.org/), via [Docker](https://hub.docker.com/r/rtomac/gmvault)
 - [gcalvault](https://github.com/rtomac/gcalvault), via [Docker](https://hub.docker.com/r/rtomac/gcalvault)
+- [gcardvault](https://github.com/rtomac/gcardvault), via [Docker](https://hub.docker.com/r/rtomac/gcardvault)
 
 # Commands
 

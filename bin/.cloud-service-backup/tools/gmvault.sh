@@ -1,6 +1,6 @@
 function _run_gmvault {
     : "${user_confd:?user_confd env variable expected}"
-    : "${user_backupd:?user_confd env variable expected}"
+    : "${user_backupd:?user_backupd env variable expected}"
 
     mkdir -p "${user_confd}"
     mkdir -p "${user_backupd}"

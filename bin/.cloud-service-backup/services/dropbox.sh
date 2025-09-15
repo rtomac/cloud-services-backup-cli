@@ -1,28 +1,42 @@
-# Runs an `rclone copy` or `rclone sync`.
-#
-# In "copy" mode, copies all new and modified files from Dropbox
-# to local, but does not delete files locally (protects
-# against accidental or malicious deletion in Dropbox).
-#
-# In "sync" mode, copies all new and modified files and deletes
-# all files locally which have been deleted in Dropbox.
-function cmd_dropbox {
+function svc_dropbox_help {
+    cat <<EOF
+Backs up Dropbox using rclone with a 'dropbox' remote.
+
+Subcommands:
+  setup <dropbox_username>
+        Runs an auth flow with Dropbox to create an access token.
+  copy <dropbox_username>
+        Runs an 'rclone copy' that will overwrite existing files
+        but will not delete files locally that have been deleted remotely.
+  sync <dropbox_username>
+        Runs an 'rclone sync' that will overwrite existing files
+        and delete files locally that have been deleted remotely.
+EOF
+}
+
+function svc_dropbox_init {
     dropbox_username=${1:?dropbox_username arg required}
 
     app_slug=dropbox
     user_slug=${dropbox_username//[^[:alnum:]]/_}
-    user_backupd=${BACKUPDATAD}/${app_slug}/${user_slug}
+    user_backupd=${CLOUD_BACKUP_DATAD}/${app_slug}/${user_slug}
     rclone_remote=${app_slug}-${user_slug}
+}
 
-    if ! _check_rclone_remote "${rclone_remote}"; then
-        _run_rclone config create "${rclone_remote}" dropbox config_is_local false
-        echo "Created rclone remote ${rclone_remote}"
+function svc_dropbox_setup {
+    rclone_x config create ${rclone_remote} dropbox config_is_local=false
+    rclone_x config reconnect ${rclone_remote}: --auto-confirm
+    echo "Created rclone remote ${rclone_remote}"
+}
+
+function svc_dropbox_copy { svc_dropbox_backup; }
+function svc_dropbox_sync { svc_dropbox_backup; }
+function svc_dropbox_backup {
+    if ! rclone_has_remote "${rclone_remote}"; then
+        svc_dropbox_setup
     fi
-
-    operation=copy
-    [ "${mode}" == "sync" ] && operation=sync
 
     echo "Using config at ${rclone_confd} with rclone remote ${rclone_remote}"
     echo "Backing up to ${user_backupd}"
-    _run_rclone ${operation} --stats-log-level NOTICE --stats 10m "${rclone_remote}":/ "${user_backupd}"
+    rclone_x ${subcommand} --stats-log-level NOTICE --stats 10m "${rclone_remote}":/ "${user_backupd}"
 }

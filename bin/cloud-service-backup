@@ -1,43 +1,62 @@
 #!/bin/bash
 
-: "${BACKUPCONFD:?Environment variable BACKUPCONFD is expected}"
-: "${BACKUPDATAD:?Environment variable BACKUPDATAD is expected}"
-mkdir -p "$BACKUPCONFD"
-mkdir -p "$BACKUPDATAD"
+# Backward compat for old env var names
+[ -n "${BACKUPCONFD:-}" ] && export CLOUD_BACKUP_CONFD="$BACKUPCONFD"
+[ -n "${BACKUPDATAD:-}" ] && export CLOUD_BACKUP_DATAD="$BACKUPDATAD"
+
+: "${CLOUD_BACKUP_CONFD:?Environment variable CLOUD_BACKUP_CONFD is expected}"
+: "${CLOUD_BACKUP_DATAD:?Environment variable CLOUD_BACKUP_DATAD is expected}"
+mkdir -p "$CLOUD_BACKUP_CONFD"
+mkdir -p "$CLOUD_BACKUP_DATAD"
 
 dir_path=$(dirname $(readlink -f $0))
-support_path=${dir_path}/.cloud-service-backup
-services_path=${support_path}/services
-tools_path=${support_path}/tools
+plugins_path=${dir_path}/.cloud-service-backup
+services_path=${plugins_path}/services
+tools_path=${plugins_path}/tools
 
-source "${tools_path}/rclone.sh"
-source "${tools_path}/gmvault.sh"
-source "${tools_path}/gcalvault.sh"
-source "${tools_path}/gcardvault.sh"
-source "${tools_path}/git.sh"
+for tool_script in "${tools_path}"/*.sh; do
+    [ -f "$tool_script" ] && source "$tool_script"
+done
 
-source "${services_path}/gmail.sh"
-source "${services_path}/google-calendar.sh"
-source "${services_path}/google-contacts.sh"
-source "${services_path}/google-drive.sh"
-source "${services_path}/google-photos.sh"
-source "${services_path}/dropbox.sh"
-source "${services_path}/github.sh"
-source "${services_path}/bitbucket.sh"
+for service_script in "${services_path}"/*.sh; do
+    [ -f "$service_script" ] && source "$service_script"
+done
 
-cmd=$1
-case $cmd in
-    "" | "help")
-        cat "${support_path}/USAGE.txt"
+command=$1
+case $command in
+
+    ""|"help")
+        cat "${plugins_path}/USAGE.txt"
+        echo ""
         ;;
+
     *)
-        cmd_slug=${cmd//[^[:alnum:]]/_}
-        fn_cmd=cmd_${cmd_slug}
+        service=${command}
+        service_slug=${service//[^[:alnum:]]/_}
+        fn_service_init=svc_${service_slug}_init
+        if ! declare -f "$fn_service_init" > /dev/null; then
+            echo "Invalid service '$service'" 1>&2
+            exit 1
+        fi
 
-        mode=${2:?"mode argument is required"}
-        [ "${mode}" != "copy" ] && [ "${mode}" != "sync" ] && ( echo "Invalid mode argument, must be one of (copy|sync)" 1>&2 ) && exit 1
-
-        shift 2
-        $fn_cmd $@
+        subcommand=$2
+        case "${subcommand}" in
+            ""|"help")
+                fn_service_help=svc_${service_slug}_help
+                $fn_service_help $@
+                echo ""
+                exit 0
+                ;;
+            "setup"|"copy"|"sync")
+                fn_service_subcommand=svc_${service_slug}_${subcommand}
+                shift 2
+                $fn_service_init $@
+                $fn_service_subcommand $@
+                ;;
+            *)
+                echo "Invalid subcommand, must be one of: setup, copy, sync" 1>&2
+                exit 1
+                ;;
+        esac
         ;;
 esac

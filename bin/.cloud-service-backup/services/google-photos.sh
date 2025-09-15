@@ -1,33 +1,60 @@
-# Runs an `rclone copy` or `rclone sync`.
-#
-# In "copy" mode, copies all new files from Google Photos
-# to local, but does not copy modified files (considered unlikely)
-# or delete files locally (protects against accidental or malicious
-# deletion in Google Photos).
+function svc_google_photos_help {
+    cat <<EOF
+Backs up Google Photos using rclone with a 'google photos' remote.
 
-# In "sync" mode, copies all new and modified files and deletes
-# all files locally which have been deleted in Google Photos.
-function cmd_google_photos {
+WARNING: rclone uses Google Photos API, which has significant limitations,
+preventing a full backup of photos and videos. Unfortunately it's
+not that useful any more. See:
+https://rclone.org/googlephotos/
+
+Subcommands:
+  setup <google_username>
+        Runs an auth flow with Google to create an access token.
+  copy <google_username> <year>
+        Runs an 'rclone copy' for photos in the specified year
+        that will add new photos but will not delete photos locally
+        that have been deleted remotely.
+  sync <google_username> <year>
+        Runs an 'rclone sync' for photos in the specified year
+        that will add new photos and delete photos locally
+        that have been deleted remotely.
+
+OAuth2 authentication:
+  If you are providing your own Google OAuth2 client (via environment
+  variables), you will need to ensure the correct APIs and OAuth2 scopes
+  are enabled. See:
+  https://rclone.org/googlephotos/#making-your-own-client-id
+EOF
+}
+
+function svc_google_photos_init {
     google_username=${1:?google_username arg required}
     year=${2:?year arg required}
 
     app_slug=google_photos
     user_slug=${google_username//[^[:alnum:]]/_}
-    user_backupd=${BACKUPDATAD}/${app_slug}/${user_slug}
+    user_backupd=${CLOUD_BACKUP_DATAD}/${app_slug}/${user_slug}
     year_backupd=${user_backupd}/${year}
     rclone_remote=${app_slug}-${user_slug}
+}
 
-    if ! _check_rclone_remote "${rclone_remote}"; then
-        _run_rclone config create ${rclone_remote} "google photos" client_id "${GOOGLE_OAUTH_CLIENT_ID}" client_secret "${GOOGLE_OAUTH_CLIENT_SECRET}" scope photoslibrary.readonly config_is_local false
-        echo "Created rclone remote ${rclone_remote}"
+function svc_google_photos_setup {
+    rclone_x config create ${rclone_remote} "google photos" client_id="${GOOGLE_OAUTH_CLIENT_ID}" client_secret="${GOOGLE_OAUTH_CLIENT_SECRET}" scope=photoslibrary.readonly config_is_local=false
+    rclone_x config reconnect ${rclone_remote}: --auto-confirm
+    echo "Created rclone remote ${rclone_remote}"
+}
+
+function svc_google_photos_copy { svc_google_photos_backup; }
+function svc_google_photos_sync { svc_google_photos_backup; }
+function svc_google_photos_backup {
+    if ! rclone_has_remote "${rclone_remote}"; then
+        svc_google_photos_setup
     fi
 
-    operation=copy
     flags=""
-    [ "${mode}" == "sync" ] && operation=sync
-    [ "${mode}" == "copy" ] && flags+=" --ignore-existing"
+    [ "${subcommand}" == "copy" ] && flags+=" --ignore-existing"
 
     echo "Using config at ${rclone_confd} with rclone remote ${rclone_remote}"
     echo "Backing up to ${year_backupd}"
-    _run_rclone ${operation} --stats-log-level NOTICE --stats 10m ${flags} "${rclone_remote}":"media/by-year/${year}" "${year_backupd}"
+    rclone_x ${subcommand} --stats-log-level NOTICE --stats 10m ${flags} "${rclone_remote}":"media/by-year/${year}" "${year_backupd}"
 }

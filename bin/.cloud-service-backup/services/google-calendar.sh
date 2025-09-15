@@ -23,10 +23,9 @@ EOF
 function svc_google_calendar_init {
     google_username=${1:?google_username arg required}
 
-    app_slug=google_calendar
     user_slug=${google_username//[^[:alnum:]]/_}
     user_confd=${CLOUD_BACKUP_CONFD}/gcalvault/${user_slug}
-    user_backupd=${CLOUD_BACKUP_DATAD}/${app_slug}/${user_slug}
+    user_backupd=${CLOUD_BACKUP_DATAD}/google_calendar/${user_slug}
 }
 
 function svc_google_calendar_setup {

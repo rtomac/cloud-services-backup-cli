@@ -40,16 +40,24 @@ OAuth2 authentication:
    - https://www.googleapis.com/auth/gmail.readonly
    - https://www.googleapis.com/auth/drive.appdata
    - https://www.googleapis.com/auth/apps.groups.migration
+
+  Note: When the client is set up and you're authorizing it, the flow
+  will have you load a URL in your browser and log in through Google.
+  If you're running this on a remote server, but loading the URL in
+  a browser on your local machine, you'll find you hit an error after
+  authorization with a page non found. That's okay, it's sort of
+  by design to work around security restrictions Google has in place.
+  Just copy the 'code' query parameter from the URL you were redirected
+  to and pate it back into the terminal prompt to complete the flow.
 EOF
 }
 
 function svc_gmail_init {
     gmail_address=${1:?gmail_address arg required}
 
-    app_slug=gmail
     user_slug=${gmail_address//[^[:alnum:]]/_}
-    user_confd=${CLOUD_BACKUP_CONFD}/${app_slug}/${user_slug}
-    user_backupd=${CLOUD_BACKUP_DATAD}/${app_slug}/${user_slug}
+    user_confd=${CLOUD_BACKUP_CONFD}/gyb/${user_slug}
+    user_backupd=${CLOUD_BACKUP_DATAD}/gmail/${user_slug}
     secrets_file=${user_confd}/client_secrets.json
     token_file=${user_confd}/${gmail_address}.cfg
 }
@@ -104,7 +112,8 @@ creating a new GCP project and OAuth2 client in GCP console.
 
 EOF
 
-        read -p "Press ENTER to continue with option #3, or Ctrl-C to abort"
+        read -p "Would you like to continue with option #3? (y/N) " confirm
+        [[ "$confirm" != [yY] ]] && exit 1
         gyb_x --email "${gmail_address}" --action create-project
     fi
 

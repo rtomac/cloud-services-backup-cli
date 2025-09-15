@@ -23,10 +23,9 @@ EOF
 function svc_google_contacts_init {
     google_username=${1:?google_username arg required}
 
-    app_slug=google_contacts
     user_slug=${google_username//[^[:alnum:]]/_}
     user_confd=${CLOUD_BACKUP_CONFD}/gcardvault/${user_slug}
-    user_backupd=${CLOUD_BACKUP_DATAD}/${app_slug}/${user_slug}
+    user_backupd=${CLOUD_BACKUP_DATAD}/google_contacts/${user_slug}
 }
 
 function svc_google_contacts_setup {

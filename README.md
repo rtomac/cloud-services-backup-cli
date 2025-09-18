@@ -58,7 +58,7 @@ See the [CLI help](bin/.cloud-service-backup/USAGE.txt) for full usage and other
 - git
 
 ## Optional dependencies
-The following are used by the CLI, but will alternately run via Docker if they are not found to be installed locally:
+The following are used by the CLI, but cloud-services-backup-cli will detect them and alternately fall back to running them via Docker if they are not found to be installed locally:
 - rclone
 - gyb
 - gcardvault

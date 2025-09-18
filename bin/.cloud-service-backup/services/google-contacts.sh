@@ -35,17 +35,20 @@ function svc_google_contacts_init {
 }
 
 function svc_google_contacts_setup {
-    gcardvault_x login "${google_username}"
+    gcardvault_x login "${google_username}" $(_svc_google_contacts_flags)
     echo "Created token for ${google_username}"
 }
 
 function svc_google_contacts_copy { svc_google_contacts_backup; }
 function svc_google_contacts_sync { svc_google_contacts_backup; }
 function svc_google_contacts_backup {
-    flags=""
-    [ ! -z "$GOOGLE_OAUTH_CLIENT_ID" ] && flags+=" --client-id ${GOOGLE_OAUTH_CLIENT_ID}"
-    [ ! -z "$GOOGLE_OAUTH_CLIENT_SECRET" ] && flags+=" --client-secret ${GOOGLE_OAUTH_CLIENT_SECRET}"
+    flags="$(_svc_google_contacts_flags)"
     [ "${subcommand}" == "sync" ] && flags+=" --clean"
     
     gcardvault_x sync "${google_username}" ${flags}
+}
+
+function _svc_google_contacts_flags {
+    [ ! -z "$GOOGLE_OAUTH_CLIENT_ID" ] && echo -n " --client-id ${GOOGLE_OAUTH_CLIENT_ID}"
+    [ ! -z "$GOOGLE_OAUTH_CLIENT_SECRET" ] && echo -n " --client-secret ${GOOGLE_OAUTH_CLIENT_SECRET}"
 }

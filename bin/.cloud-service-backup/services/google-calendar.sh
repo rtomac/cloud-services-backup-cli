@@ -35,17 +35,20 @@ function svc_google_calendar_init {
 }
 
 function svc_google_calendar_setup {
-    gcalvault_x login "${google_username}"
+    gcalvault_x login "${google_username}" $(_svc_google_calendar_flags)
     echo "Created token for ${google_username}"
 }
 
 function svc_google_calendar_copy { svc_google_calendar_backup; }
 function svc_google_calendar_sync { svc_google_calendar_backup; }
 function svc_google_calendar_backup {
-    flags=""
-    [ ! -z "$GOOGLE_OAUTH_CLIENT_ID" ] && flags+=" --client-id ${GOOGLE_OAUTH_CLIENT_ID}"
-    [ ! -z "$GOOGLE_OAUTH_CLIENT_SECRET" ] && flags+=" --client-secret ${GOOGLE_OAUTH_CLIENT_SECRET}"
+    flags="$(_svc_google_calendar_flags)"
     [ "${subcommand}" == "sync" ] && flags+=" --clean"
     
     gcalvault_x sync "${google_username}" ${flags}
+}
+
+function _svc_google_calendar_flags {
+    [ ! -z "$GOOGLE_OAUTH_CLIENT_ID" ] && echo -n " --client-id ${GOOGLE_OAUTH_CLIENT_ID}"
+    [ ! -z "$GOOGLE_OAUTH_CLIENT_SECRET" ] && echo -n " --client-secret ${GOOGLE_OAUTH_CLIENT_SECRET}"
 }

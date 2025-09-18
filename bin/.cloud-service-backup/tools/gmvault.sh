@@ -6,7 +6,7 @@ function gmvault_x {
     mkdir -p "${user_backupd}"
 
     if command -v gmvault >/dev/null 2>&1; then
-        echo Running via cmd: gmvault "$@"
+        # echo Running via cmd: gmvault "$@"
         gmvault --config-dir ${user_confd} --db-dir ${user_backupd} --client-id ${GOOGLE_OAUTH_CLIENT_ID} --client-secret ${GOOGLE_OAUTH_CLIENT_SECRET} "$@"
         return
     fi
@@ -15,9 +15,10 @@ function gmvault_x {
     [ -t 0 ] && docker_flags+=" -i" # stdin is a terminal
     [ -t 1 ] && docker_flags+=" -t" # stdout is a terminal
 
-    echo Running: gmvault "$@"
+    # echo Running: gmvault "$@"
     docker run ${docker_flags} \
         -v /etc/localtime:/etc/localtime:ro \
+        -v /etc/timezone:/etc/timezone:ro \
         -v "${user_confd}":/root/.gmvault \
         -v "${user_backupd}":/root/gmvault-db \
         -e GOOGLEOAUTH2__GMVAULT_CLIENT_ID=${GOOGLE_OAUTH_CLIENT_ID} \

@@ -6,7 +6,7 @@ function gyb_x {
     mkdir -p "${user_backupd}"
 
     if command -v gyb >/dev/null 2>&1; then
-        echo Running via cmd: gyb "$@"
+        # echo Running via cmd: gyb "$@"
         gyb --config-folder "${user_confd}" --local-folder "${user_backupd}" "$@"
         return
     fi
@@ -15,9 +15,10 @@ function gyb_x {
     [ -t 0 ] && docker_flags+=" -i" # stdin is a terminal
     [ -t 1 ] && docker_flags+=" -t" # stdout is a terminal
 
-    echo Running via docker: gyb "$@"
+    # echo Running via docker: gyb "$@"
     docker run ${docker_flags} \
         -v /etc/localtime:/etc/localtime:ro \
+        -v /etc/timezone:/etc/timezone:ro \
         -v "${user_confd}":/config \
         -v "${user_backupd}":/data \
         -e NOCRON=1 \

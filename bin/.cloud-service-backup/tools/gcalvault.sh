@@ -6,7 +6,7 @@ function gcalvault_x {
     mkdir -p "${user_backupd}"
 
     if command -v gcalvault >/dev/null 2>&1; then
-        echo Running via cmd: gcalvault "$@"
+        # echo Running via cmd: gcalvault "$@"
         GCALVAULT_CONF_DIR=${user_confd} GCALVAULT_OUTPUT_DIR=${user_backupd} gcalvault "$@"
         return
     fi
@@ -15,9 +15,10 @@ function gcalvault_x {
     [ -t 0 ] && docker_flags+=" -i" # stdin is a terminal
     [ -t 1 ] && docker_flags+=" -t" # stdout is a terminal
 
-    echo Running via docker: gcalvault "$@"
+    # echo Running via docker: gcalvault "$@"
     docker run ${docker_flags} \
         -v /etc/localtime:/etc/localtime:ro \
+        -v /etc/timezone:/etc/timezone:ro \
         -v "${user_confd}":/root/.gcalvault \
         -v "${user_backupd}":/root/gcalvault \
         rtomac/gcalvault "$@"

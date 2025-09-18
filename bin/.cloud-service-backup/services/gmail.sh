@@ -60,6 +60,12 @@ function svc_gmail_init {
     user_backupd=${CLOUD_BACKUP_DATAD}/gmail/${user_slug}
     secrets_file=${user_confd}/client_secrets.json
     token_file=${user_confd}/${gmail_address}.cfg
+
+    mkdir -p "${user_confd}"
+    mkdir -p "${user_backupd}"
+
+    echo "Using config at ${user_confd}"
+    echo "Backing up to ${user_backupd}"
 }
 
 function svc_gmail_setup {
@@ -100,7 +106,8 @@ You have three options:
    '${secrets_file}',
    and re-run this command.
 3. Let GYB create a Google OAuth2 client for you by proceeding
-   through the interactive process to follow.
+   through the interactive process to follow. (Must be run on
+   a machine with a web browser.)
 
 If you already know what you're doing and have an OAuth2 client
 to use, see help for APIs that must be enabled and choose
@@ -109,7 +116,6 @@ option #1 or #2 above.
 If you haven't done this before, choose option #3. GYB has a pretty
 excellent semi-automated but interactive process to walk you through
 creating a new GCP project and OAuth2 client in GCP console.
-
 EOF
 
         read -p "Would you like to continue with option #3? (y/N) " confirm
@@ -117,7 +123,7 @@ EOF
         gyb_x --email "${gmail_address}" --action create-project
     fi
 
-    # Remove user token file and run 'quota' command to initiate auth flow
+    # Remove user token file and run 'quota' command to force an auth flow
     if [ -f "${token_file}" ]; then
         rm -f "${token_file}"
     fi
@@ -142,7 +148,5 @@ function svc_gmail_backup {
         #flags+=" --search newer_than:12m --fast-incremental"
     fi
 
-    echo "Using config at ${user_confd}"
-    echo "Backing up to ${user_backupd}"
     gyb_x --email "${gmail_address}" --action backup ${flags}
 }

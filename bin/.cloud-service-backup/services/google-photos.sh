@@ -35,12 +35,20 @@ function svc_google_photos_init {
     user_slug=${google_username//[^[:alnum:]]/_}
     user_backupd=${CLOUD_BACKUP_DATAD}/${app_slug}/${user_slug}
     year_backupd=${user_backupd}/${year}
-    rclone_remote=${app_slug}-${user_slug}
+    rclone_remote=${app_slug}+${user_slug}
+
+    mkdir -p "${user_backupd}"
+
+    echo "Using rclone remote ${rclone_remote} with config at ${RCLONE_CONFIG}"
+    echo "Backing up to ${user_backupd}"
 }
 
 function svc_google_photos_setup {
-    rclone_x config create ${rclone_remote} "google photos" client_id="${GOOGLE_OAUTH_CLIENT_ID}" client_secret="${GOOGLE_OAUTH_CLIENT_SECRET}" scope=photoslibrary.readonly config_is_local=false
-    rclone_x config reconnect ${rclone_remote}: --auto-confirm
+    # config_is_local=false will skip authz and make non-interactive
+    rclone_x config create ${rclone_remote} "google photos" \
+        client_id="${GOOGLE_OAUTH_CLIENT_ID}" client_secret="${GOOGLE_OAUTH_CLIENT_SECRET}" \
+        scope=photoslibrary.readonly config_is_local=false
+    rclone_authorize_user "${rclone_remote}"
     echo "Created rclone remote ${rclone_remote}"
 }
 
@@ -54,7 +62,5 @@ function svc_google_photos_backup {
     flags=""
     [ "${subcommand}" == "copy" ] && flags+=" --ignore-existing"
 
-    echo "Using config at ${rclone_confd} with rclone remote ${rclone_remote}"
-    echo "Backing up to ${year_backupd}"
     rclone_x ${subcommand} --stats-log-level NOTICE --stats 10m ${flags} "${rclone_remote}":"media/by-year/${year}" "${year_backupd}"
 }

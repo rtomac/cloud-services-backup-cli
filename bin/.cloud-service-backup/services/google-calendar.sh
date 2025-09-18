@@ -26,6 +26,12 @@ function svc_google_calendar_init {
     user_slug=${google_username//[^[:alnum:]]/_}
     user_confd=${CLOUD_BACKUP_CONFD}/gcalvault/${user_slug}
     user_backupd=${CLOUD_BACKUP_DATAD}/google_calendar/${user_slug}
+
+    mkdir -p "${user_confd}"
+    mkdir -p "${user_backupd}"
+
+    echo "Using config at ${user_confd}"
+    echo "Backing up to ${user_backupd}"
 }
 
 function svc_google_calendar_setup {
@@ -40,8 +46,6 @@ function svc_google_calendar_backup {
     [ ! -z "$GOOGLE_OAUTH_CLIENT_ID" ] && flags+=" --client-id ${GOOGLE_OAUTH_CLIENT_ID}"
     [ ! -z "$GOOGLE_OAUTH_CLIENT_SECRET" ] && flags+=" --client-secret ${GOOGLE_OAUTH_CLIENT_SECRET}"
     [ "${subcommand}" == "sync" ] && flags+=" --clean"
-
-    echo "Using config at ${user_confd}"
-    echo "Backing up to ${user_backupd}"
+    
     gcalvault_x sync "${google_username}" ${flags}
 }

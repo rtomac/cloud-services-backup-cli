@@ -34,6 +34,9 @@ function svc_github_init {
     access_token_file=${user_confd}/.git-access-token
     credentials_file=${user_confd}/.git-credentials
     repos_file=${user_confd}/repos
+
+    echo "Using config at ${user_confd}"
+    echo "Backing up to ${user_backupd}"
 }
 
 function svc_github_setup {
@@ -51,6 +54,5 @@ function svc_github_backup {
     [ "${subcommand}" == "sync" ] && rm -r "${user_backupd}" && mkdir -p "${user_backupd}" \
         && echo "Removed existing git repos"
 
-    echo "Mirroring repos to ${user_backupd}"
     git_mirror_repos ${repos_file}
 }

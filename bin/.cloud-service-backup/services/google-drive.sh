@@ -26,12 +26,20 @@ function svc_google_drive_init {
     app_slug=google_drive
     user_slug=${google_username//[^[:alnum:]]/_}
     user_backupd=${CLOUD_BACKUP_DATAD}/${app_slug}/${user_slug}
-    rclone_remote=${app_slug}-${user_slug}
+    rclone_remote=${app_slug}+${user_slug}
+
+    mkdir -p "${user_backupd}"
+
+    echo "Using rclone remote ${rclone_remote} with config at ${RCLONE_CONFIG}"
+    echo "Backing up to ${user_backupd}"
 }
 
 function svc_google_drive_setup {
-    rclone_x config create ${rclone_remote} drive client_id="${GOOGLE_OAUTH_CLIENT_ID}" client_secret="${GOOGLE_OAUTH_CLIENT_SECRET}" scope=drive.readonly teamdrive= config_is_local=false
-    rclone_x config reconnect ${rclone_remote}: --auto-confirm
+    # config_is_local=false will skip authz and make non-interactive
+    rclone_x config create "${rclone_remote}" drive \
+        client_id="${GOOGLE_OAUTH_CLIENT_ID}" client_secret="${GOOGLE_OAUTH_CLIENT_SECRET}" \
+        scope=drive.readonly config_is_local=false
+    rclone_authorize_user "${rclone_remote}"
     echo "Created rclone remote ${rclone_remote}"
 }
 
@@ -42,7 +50,5 @@ function svc_google_drive_backup {
         svc_google_drive_setup
     fi
 
-    echo "Using config at ${rclone_confd} with rclone remote ${rclone_remote}"
-    echo "Backing up to ${user_backupd}"
     rclone_x ${subcommand} --stats-log-level NOTICE --stats 10m --exclude "/Google Photos/" "${rclone_remote}":/ "${user_backupd}"
 }

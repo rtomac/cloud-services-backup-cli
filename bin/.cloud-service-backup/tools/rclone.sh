@@ -43,6 +43,9 @@ function rclone_authorize_user {
     # headless machine
     # 
     # But it was hard fought so leaving here for reference!
+    #
+    # Note: jq not needed in this project unless this gets
+    # re-enabed at some point
     if has_web_browser; then
         # Start interactive OAuth2 flow if we have a browser
         # --auto-confirm will skip the question on whether the user

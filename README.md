@@ -39,6 +39,9 @@ There is a plug-in model for adding services to the CLI (see the [services folde
 ## Google Photos
 `cloud-service-backup google-photos (setup|copy|sync) foo.bar@gmail.com 2020`
 
+## Google Takeout
+`cloud-service-backup google-takeout (setup|copy|sync) foo.bar@gmail.com`
+
 ## Dropbox
 `cloud-service-backup dropbox (setup|copy|sync) foo.bar`
 

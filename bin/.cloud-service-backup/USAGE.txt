@@ -11,6 +11,7 @@ Services:
   google-contacts
   google-drive
   google-photos
+  google-takeout
   dropbox
   github
   bitbucket

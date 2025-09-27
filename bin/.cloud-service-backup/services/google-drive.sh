@@ -50,5 +50,6 @@ function svc_google_drive_backup {
         svc_google_drive_setup
     fi
 
-    rclone_x ${subcommand} --stats-log-level NOTICE --stats 10m --exclude "/Google Photos/" "${rclone_remote}":/ "${user_backupd}"
+    echo "Starting rclone ${subcommand}..."
+    rclone_x ${subcommand} --stats-log-level NOTICE --stats 1m --exclude "/Google Photos/" --exclude "/Takeout/" "${rclone_remote}":/ "${user_backupd}"
 }

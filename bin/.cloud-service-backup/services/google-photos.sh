@@ -62,5 +62,6 @@ function svc_google_photos_backup {
     flags=""
     [ "${subcommand}" == "copy" ] && flags+=" --ignore-existing"
 
-    rclone_x ${subcommand} --stats-log-level NOTICE --stats 10m ${flags} "${rclone_remote}":"media/by-year/${year}" "${year_backupd}"
+    echo "Starting rclone ${subcommand}..."
+    rclone_x ${subcommand} --stats-log-level NOTICE --stats 1m ${flags} "${rclone_remote}":"media/by-year/${year}" "${year_backupd}"
 }

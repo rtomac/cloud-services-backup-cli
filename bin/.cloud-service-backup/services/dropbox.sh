@@ -42,5 +42,6 @@ function svc_dropbox_backup {
         svc_dropbox_setup
     fi
 
+    echo "Starting rclone ${subcommand}..."
     rclone_x ${subcommand} --stats-log-level NOTICE --stats 10m "${rclone_remote}":/ "${user_backupd}"
 }

@@ -14,7 +14,7 @@ plugins_path=${dir_path}/.cloud-service-backup
 services_path=${plugins_path}/services
 tools_path=${plugins_path}/tools
 
-for tool_script in "${tools_path}"/*.sh; do
+for tool_script in "${tools_path}"/lib/*.sh; do
     [ -f "$tool_script" ] && source "$tool_script"
 done
 

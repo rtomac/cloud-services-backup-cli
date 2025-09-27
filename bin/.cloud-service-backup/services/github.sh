@@ -49,7 +49,7 @@ function svc_github_backup {
     git_ensure_access_token "github.com" "${github_username}"
 
     access_token=`cat ${access_token_file}`
-    python "${tools_path}/list-github-repos.py" "${github_username}" "${access_token}" > ${repos_file}
+    python "${tools_path}/exe/list-github-repos.py" "${github_username}" "${access_token}" > ${repos_file}
 
     [ "${subcommand}" == "sync" ] && rm -r "${user_backupd}" && mkdir -p "${user_backupd}" \
         && echo "Removed existing git repos"

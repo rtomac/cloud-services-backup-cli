@@ -43,7 +43,7 @@ function svc_bitbucket_backup {
     git_ensure_access_token "bitbucket.org" "${bitbucket_username}"
 
     access_token=`cat ${access_token_file}`
-    python "${tools_path}/exe/list-bitbucket-repos.py" "${bitbucket_username}" "${access_token}" > ${repos_file}
+    python3 "${tools_path}/cmd/ls-bitbucket-repos.py" "${bitbucket_username}" "${access_token}" > ${repos_file}
 
     [ "${subcommand}" == "sync" ] && rm -r "${user_backupd}" && mkdir -p "${user_backupd}" \
         && echo "Removed existing git repos"

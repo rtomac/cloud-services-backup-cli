@@ -89,7 +89,6 @@ OAuth2 authentication:
             source_file = source_album_dir.joinpath(source_file_stem + METADATA_SUFFIX_IN)
             dest_file = dest_album_dir.joinpath(source_file_stem + METADATA_SUFFIX_OUT)
             rsync("--archive", "--update", "--out-format=%n", f"{source_file}", f"{dest_file}")
-            break
 
         if subcommand == "sync":
             dest_file_stems = [

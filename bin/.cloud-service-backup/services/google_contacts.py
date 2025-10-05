@@ -1,6 +1,7 @@
 from lib import *
 from tools.gcardvault import *
 
+
 @register_service("google-contacts")
 class GoogleContacts(Service):
     """

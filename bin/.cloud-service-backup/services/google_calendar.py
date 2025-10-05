@@ -1,6 +1,7 @@
 from lib import *
 from tools.gcalvault import *
 
+
 @register_service("google-calendar")
 class GoogleCalendar(Service):
     """

@@ -1,6 +1,7 @@
 from lib import *
 from tools.rclone import *
 
+
 @register_service("google-photos")
 class GooglePhotos(RcloneService):
     """

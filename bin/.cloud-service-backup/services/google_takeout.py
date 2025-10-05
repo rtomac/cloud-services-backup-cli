@@ -16,8 +16,8 @@ class GoogleTakeout(Service):
 Backs up files from Google Takeout archives that are
 created and saved into Google Drive (one of the options
 Google Takeout provides). Uses rclone with a 'drive'
-remote to download the archive files, unpacks them into
-export folders, and then coalesces them into a single
+remote to download the archive files, extracts them into
+export folders, and then syncs them into a single
 backup folder that will store the latest export for each
 Google product.
 
@@ -36,7 +36,7 @@ Subcommands:
   sync <google_username>
         Downloads archive files and syncs contents for each
         included product into the backup dir. For product folders
-        included in the export, will fully sync them to the backup
+        included in the export, will sync them fully to the backup
         folder, removing any files that were removed in the export.
         However, will not touch any product folders that aren't
         included in the export.

@@ -7,7 +7,32 @@ from .google_takeout import *
 @register_service("google-takeout-photos")
 class GoogleTakeoutPhotos(GoogleTakeoutAddonService):
     """
-To do
+Backs up Google Photos from Google Takeout archives
+that are created and saved into Google Drive.
+
+For more information on how this works, see:
+  cloud-service-backup google-takeout --help
+
+Subcommands:
+  setup <google_username>
+        Runs an auth flow with Google to create an access token.
+  copy <google_username>
+        Downloads archive files and syncs albums to the
+        albums directory in the backup dir. Additive only,
+        will not remove any existing files in the backup dir.
+  sync <google_username>
+        Downloads archive files and syncs albums to the
+        albums directory in the backup dir. For albums
+        included in the export, will sync them fully to the backup
+        folder, removing any photos that were removed in the export.
+        However, will not touch any albums that aren't
+        included in the export.
+
+OAuth2 authentication:
+  If you are providing your own Google OAuth2 client (via environment
+  variables), you will need to ensure the correct APIs and OAuth2 scopes
+  are enabled. See:
+  https://rclone.org/drive/#making-your-own-client-id
     """
 
     def __init__(self, username: str):

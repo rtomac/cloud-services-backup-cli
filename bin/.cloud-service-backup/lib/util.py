@@ -73,3 +73,10 @@ def list_subdirs(parent_dir: str | Path) -> list[Path]:
         [entry for entry in path.iterdir() if entry.is_dir()],
         key=lambda e: e.name.lower()
     )
+
+def list_files(parent_dir: str | Path) -> list[Path]:
+    path = Path(parent_dir)
+    return sorted(
+        [entry for entry in path.iterdir() if entry.is_file()],
+        key=lambda e: e.name.lower()
+    )

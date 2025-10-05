@@ -1,4 +1,6 @@
+from __future__ import annotations
 from abc import abstractmethod
+from dataclasses import dataclass, field
 import logging
 import shutil
 import tarfile
@@ -74,24 +76,29 @@ OAuth2 authentication:
     def setup_required(self) -> bool:
         return self.google_drive.setup_required()
 
-    def sync_and_extract_exports(self, subcommand: str) -> None:
-        print(f"Starting rclone {subcommand} to download/sync archives...")
-        self.__sync_archives_from_remote(subcommand)
 
-        print("Extracting archives...")
-        self.__extract_exports()
-        self.__cleanup_extracts()
+    def list_exports(self) -> list[GoogleTakeoutExport]:
+        exports = {}
+        for archive in self.list_archive_files():
+            export_name = "-".join(archive.name.split("-")[:2])
+            key = export_name.lower()
+            export = exports.setdefault(key, GoogleTakeoutExport(export_name, self.user_backupd_archives / export_name))
+            export.archives.append(archive)
+            logging.debug(f"Found archive '{archive.name}' in export '{export_name}'")
+        return sorted(exports.values(), key=lambda e: e.name)
 
-    def get_extract_dirs(self) -> list[Path]:
+    def list_archive_files(self) -> list[Path]:
+        return [
+            e for e in list_files(self.user_backupd_archives)
+                if e.suffix.lower() in {".tgz", ".zip"}
+                    and e.name.lower().startswith("takeout-")
+        ]
+
+    def list_extract_dirs(self) -> list[Path]:
         return list_subdirs(self.user_backupd_archives)
 
-    def _backup(self, subcommand: str, *args: str) -> None:
-        self.sync_and_extract_exports(subcommand)
-
-        print("Backing up takeout files...")
-        self.__sync_exports(subcommand)
-
-    def __sync_archives_from_remote(self, subcommand: str) -> None:
+    def sync_archives_from_remote(self, subcommand: str) -> None:
+        print(f"Starting rclone {subcommand} to download/sync archives...")
         rclone(
             subcommand,
             "--stats-log-level", "NOTICE",
@@ -101,39 +108,34 @@ OAuth2 authentication:
             f"{self.user_backupd_archives}/",
         )
 
-    def __get_exports(self) -> list[tuple[str, Path, list[Path]]]:
-        exports = {}
-
-        for entry in sorted(Path(self.user_backupd_archives).iterdir(), key=lambda e: e.name.lower()):
-            if entry.is_file() and entry.suffix.lower() in {".tgz", ".zip"}:
-                archive_name = entry.name
-                if archive_name.lower().startswith("takeout-"):
-                    export_name = "-".join(archive_name.split("-")[:2])
-                    key = export_name.lower()
-                    export = exports.setdefault(key, [export_name, self.user_backupd_archives / export_name, []])
-                    export[2].append(entry)
-                    logging.debug(f"Found archive '{archive_name}' in export '{export_name}'")
-
-        return sorted(exports.values(), key=lambda e: e[0])
-
-    def __extract_exports(self) -> None:
-        for export in self.__get_exports():
-            (export_name, extract_dir, archives) = export
-            if not extract_dir.exists():
-                self.__extract_export(export)
+    def extract_archives(self, subcommand) -> None:
+        print("Extracting archives...")
+        for export in self.list_exports():
+            if not export.extract_dir.exists():
+                self.__extract_archives_for_export(export)
             else:
-                print(f"Skipping {export_name}, extract folder already exists")
+                logging.debug(f"Skipping {export.name}, extract folder already exists")
+        
+        self.__cleanup_extract_dirs()
 
-    def __extract_export(self, export: tuple[str, Path, list[Path]]) -> None:
-        (export_name, extract_dir, archives) = export
-        print(f"Extracting export '{export_name}'...")
-        extract_dir.mkdir(parents=True, exist_ok=True)
+
+    def _backup(self, subcommand: str, *args: str) -> None:
+        self.sync_archives_from_remote(subcommand)
+        self.extract_archives(subcommand)
+
+        print("Backing up takeout files...")
+        self.__sync_exports_to_backup(subcommand)
+
+
+    def __extract_archives_for_export(self, export: GoogleTakeoutExport) -> None:
+        print(f"Extracting archives for export '{export.name}'...")
+        export.extract_dir.mkdir(parents=True, exist_ok=True)
         try:
-            for archive in archives:
-                self.__extract_archive(archive, extract_dir)
+            for archive in export.archives:
+                self.__extract_archive(archive, export.extract_dir)
         except Exception as e:
-            shutil.rmtree(extract_dir.resolve(), ignore_errors=True)
-            error(f"Failed to extract archives for export {export_name}")
+            shutil.rmtree(export.extract_dir.resolve(), ignore_errors=True)
+            error(f"Failed to extract archives for export {export.name}, cleaned up extract folder")
 
     def __extract_archive(self, archive: Path, extract_dir: Path) -> None:
         print(f"Extracting archive {archive.name}...")
@@ -145,36 +147,38 @@ OAuth2 authentication:
                 with zipfile.ZipFile(archive.resolve(), "r") as zip_ref:
                     zip_ref.extractall(extract_dir.resolve())
         except Exception as e:
-            print(f"Failed to extract {archive.name}: {e}")
+            logging.error(f"Failed to extract {archive.name}: {e}")
             raise
-    
-    def __cleanup_extracts(self) -> None:
-        for extract_dir in self.get_extract_dirs():
-            archive_exists = any(
+
+
+    def __cleanup_extract_dirs(self) -> None:
+        for extract_dir in self.list_extract_dirs():
+            archive_file_exists = any(
                 entry.name.startswith(extract_dir.name) and entry.suffix in (".tgz", ".zip")
                     for entry in self.user_backupd_archives.iterdir()
             )
-            if not archive_exists:
+            if not archive_file_exists:
                 print(f"Deleting folder {extract_dir.name}, no corresponding archive found...")
                 shutil.rmtree(extract_dir.resolve(), ignore_errors=True)
 
-    def __sync_exports(self, subcommand: str) -> None:
-        for extract_dir in self.get_extract_dirs():
-            source_root_dir = extract_dir.joinpath("Takeout")
+
+    def __sync_exports_to_backup(self, subcommand: str) -> None:
+        for export in self.list_exports():
+            source_root_dir = export.extract_dir.joinpath("Takeout")
             if not source_root_dir.exists() or not source_root_dir.is_dir(): continue
 
-            print(f"Synchronizing files from export '{extract_dir.name}'...")
+            print(f"Synchronizing files from export '{export.name}'...")
             
             # Go one-by-one through Google product folders in source export,
             # so we don't remove any product folders that aren't in this export
             for source_product_dir in list_subdirs(source_root_dir):
                 if source_product_dir.name not in self.SYNC_SUBDIRS_FOR:
-                    self.__sync_export_subdir(subcommand, source_root_dir, self.user_backupd_files, source_product_dir.name)
+                    self.__sync_export_subdir_to_backup(subcommand, source_root_dir, self.user_backupd_files, source_product_dir.name)
                 else:
                     for source_product_subdir in list_subdirs(source_product_dir):
-                        self.__sync_export_subdir(subcommand, source_root_dir, self.user_backupd_files, f"{source_product_dir.name}/{source_product_subdir.name}")
+                        self.__sync_export_subdir_to_backup(subcommand, source_root_dir, self.user_backupd_files, f"{source_product_dir.name}/{source_product_subdir.name}")
 
-    def __sync_export_subdir(self, subcommand: str, source_root_dir: Path, dest_root_dir: Path, relative_dir: str) -> None:
+    def __sync_export_subdir_to_backup(self, subcommand: str, source_root_dir: Path, dest_root_dir: Path, relative_dir: str) -> None:
         source_dir = source_root_dir.joinpath(relative_dir)
         dest_dir = dest_root_dir.joinpath(relative_dir)
         dest_dir.mkdir(parents=True, exist_ok=True)
@@ -185,6 +189,13 @@ OAuth2 authentication:
         
         print(f"Synchronizing files in '{relative_dir}'...")
         rsync(*rsync_flags, f"{source_dir}/", f"{dest_dir}/")
+
+
+@dataclass
+class GoogleTakeoutExport:
+    name: str
+    extract_dir: Path
+    archives: list[Path] = field(default_factory=list)
 
 
 class GoogleTakeoutAddonService(Service):
@@ -210,7 +221,8 @@ class GoogleTakeoutAddonService(Service):
         return self.google_takeout.setup_required()
 
     def _backup(self, subcommand: str, *args: str) -> None:
-        self.google_takeout.sync_and_extract_exports(subcommand)
+        #self.google_takeout.sync_archives_from_remote(subcommand)
+        self.google_takeout.extract_archives(subcommand)
         self._backup_takeout_files(subcommand, *args)
 
     @abstractmethod

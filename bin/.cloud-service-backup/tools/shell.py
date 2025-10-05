@@ -9,7 +9,6 @@ def stringify_args(args : list) -> list[str]:
 def flatten_args(params : dict) -> list[str]:
     return [item for kv in params.items() for item in kv]
 
-
 def docker_flags() -> list[str]:
     # Docker flags for terminal interactivity
     docker_flags = []

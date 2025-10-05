@@ -69,8 +69,8 @@ OAuth2 authentication:
     def setup(self, *args: str) -> None:
         self.google_drive.setup()
 
-    def _force_setup(self) -> bool:
-        return self.google_drive._force_setup()
+    def _should_force_setup(self) -> bool:
+        return self.google_drive._should_force_setup()
 
     def _backup(self, subcommand: str, *args: str) -> None:
         self._sync_and_extract_exports(subcommand)
@@ -204,8 +204,8 @@ class GoogleTakeoutExtensionService(Service):
     def setup(self, *args: str) -> None:
         self.google_takeout.setup()
 
-    def _force_setup(self) -> bool:
-        return self.google_takeout._force_setup()
+    def _should_force_setup(self) -> bool:
+        return self.google_takeout._should_force_setup()
 
     def _backup(self, subcommand: str, *args: str) -> None:
         self.google_takeout._sync_and_extract_exports(subcommand)

@@ -44,7 +44,7 @@ OAuth2 authentication:
             "login", self.username, *google_oauth_creds_as_args())
         print(f"Created token for {self.username}")
 
-    def _force_setup(self) -> bool:
+    def _should_force_setup(self) -> bool:
         # gcardvault will force setup on it's own when needed
         return False
 

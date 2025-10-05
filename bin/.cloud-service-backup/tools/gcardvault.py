@@ -7,9 +7,9 @@ from tools import shell
 
 
 def gcardvault(opts : dict, *args : str) -> CompletedProcess:
-    _gcardvault_run(opts, args, check=True)
+    return __gcardvault_run(opts, args, check=True)
 
-def _gcardvault_run(opts : dict, args: list[str], **kwargs) -> CompletedProcess:
+def __gcardvault_run(opts : dict, args: list[str], **kwargs) -> CompletedProcess:
     user_confd = Path(opts['user_confd'])
     user_backupd = Path(opts['user_backupd'])
 

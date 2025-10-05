@@ -6,9 +6,9 @@ from lib import *
 from tools import shell
 
 def gcalvault(opts : dict, *args : str) -> CompletedProcess:
-    _gcalvault_run(opts, args, check=True)
+    return __gcalvault_run(opts, args, check=True)
 
-def _gcalvault_run(opts : dict, args : list[str], **kwargs) -> CompletedProcess:
+def __gcalvault_run(opts : dict, args : list[str], **kwargs) -> CompletedProcess:
     user_confd = Path(opts['user_confd'])
     user_backupd = Path(opts['user_backupd'])
 

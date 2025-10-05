@@ -1,3 +1,6 @@
+from abc import ABC, abstractmethod
+
+
 REGISTRY = {}
 
 
@@ -14,13 +17,15 @@ def get_service_usage(service_type: type) -> str:
     return service_type.__doc__.strip()
 
 
-class Service:
+class Service(ABC):
     def __init__(self, username: str):
         self.username = username
 
+    @abstractmethod
     def info(self) -> None:
         raise NotImplementedError()
 
+    @abstractmethod
     def setup(self, *args: str) -> None:
         raise NotImplementedError()
 
@@ -31,12 +36,14 @@ class Service:
         self.backup("sync", *args)
 
     def backup(self, subcommand: str, *args: str) -> None:
-        if self._force_setup():
+        if self._should_force_setup():
             self.setup(*args)
         self._backup(subcommand, *args)
 
-    def _force_setup(self) -> bool:
+    @abstractmethod
+    def _should_force_setup(self) -> bool:
         raise NotImplementedError()
 
+    @abstractmethod
     def _backup(self, subcommand: str, *args: str) -> None:
         raise NotImplementedError()

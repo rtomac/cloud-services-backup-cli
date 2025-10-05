@@ -1,3 +1,4 @@
+from abc import abstractmethod
 import os
 import subprocess
 from subprocess import CompletedProcess
@@ -35,9 +36,9 @@ def git_mirror_repos(repo_urls: list[str], backup_dir: Path, credentials_file: P
 
 
 def git(*args: str) -> CompletedProcess:
-    _git_run(args, check=True)
+    return __git_run(args, check=True)
 
-def _git_run(args: list[str], **kwargs) -> CompletedProcess:
+def __git_run(args: list[str], **kwargs) -> CompletedProcess:
     cmd = ["git", *shell.stringify_args(args)]
     log_command(cmd)
     return subprocess.run(
@@ -76,7 +77,7 @@ class GitHostService(Service):
             self.service_domain, self.username, self.access_token_file, self.credentials_file)
         print(f"git credentials saved in {self.user_confd}")
 
-    def _force_setup(self) -> bool:
+    def _should_force_setup(self) -> bool:
         return not git_has_credentials(self.access_token_file, self.credentials_file)
 
     def _backup(self, subcommand: str, *args: str) -> None:
@@ -91,5 +92,6 @@ class GitHostService(Service):
             access_token = f.read().strip()
         return (self.username, access_token)
 
+    @abstractmethod
     def _get_repo_urls(self) -> list[str]:
         raise NotImplementedError()

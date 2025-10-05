@@ -1,3 +1,4 @@
+from abc import abstractmethod
 import os
 import subprocess
 from subprocess import CompletedProcess
@@ -38,13 +39,13 @@ def rclone_authorize_user(remote: str) -> None:
 
 
 def rclone(*args: str) -> CompletedProcess:
-    return _rclone_run(args, check=True)
+    return __rclone_run(args, check=True)
 
 def rclone_pipe(*args: str) -> str:
-    result = _rclone_run(args, check=True, capture_output=True, text=True)
+    result = __rclone_run(args, check=True, capture_output=True, text=True)
     return result.stdout
 
-def _rclone_run(args: list[str], **kwargs) -> CompletedProcess:
+def __rclone_run(args: list[str], **kwargs) -> CompletedProcess:
     os.makedirs(RCLONE_CONFD, exist_ok=True)
 
     if shutil.which("rclone") is not None:
@@ -93,8 +94,9 @@ class RcloneService(Service):
 
         print(f"rclone remote '{self.rclone_remote}' setup succeeded ")
 
-    def _force_setup(self) -> bool:
+    def _should_force_setup(self) -> bool:
         return not rclone_has_remote(self.rclone_remote)
 
+    @abstractmethod
     def _create_remote_silent(self) -> None:
         raise NotImplementedError()

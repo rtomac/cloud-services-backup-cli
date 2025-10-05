@@ -1,4 +1,3 @@
-import sys
 import requests
 from lib import *
 from tools.git import *

@@ -97,7 +97,7 @@ OAuth2 authentication:
         # give user the option to run through GYB's interactive
         # process to create a Google OAuth2 client of their own
         if not self.secrets_file.exists():
-            print(self._get_oauth_client_instr())
+            print(self.__get_oauth_client_instr())
             confirm = input("Would you like to continue with option #3? (y/N) ")
             if confirm.lower() != "y":
                 exit(1)
@@ -110,7 +110,7 @@ OAuth2 authentication:
 
         print(f"Created auth token for user {self.username}")
 
-    def _force_setup(self) -> bool:
+    def _should_force_setup(self) -> bool:
         return not self.token_file.exists()
 
     def _backup(self, subcommand: str, *args: str) -> None:
@@ -128,7 +128,7 @@ OAuth2 authentication:
         print(f"Starting gyb backup...")
         gyb(self.__dict__, "--email", self.username, "--action", "backup", *flags)
 
-    def _get_oauth_client_instr(self) -> str:
+    def __get_oauth_client_instr(self) -> str:
         return f"""
 Google OAuth2 client ID & secret were not provided in the environment
 and are required to generate an auth token for use with GYB.

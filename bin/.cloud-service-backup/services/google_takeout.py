@@ -53,6 +53,7 @@ OAuth2 authentication:
 
         user_slug = slugify(self.username)
         self.google_drive = GoogleDrive(self.username)
+        self.rclone_remote = self.google_drive.rclone_remote
         self.user_backupd = backup_datad("google_takeout", user_slug)
         self.user_backupd_archives = self.user_backupd.joinpath("archives")
         self.user_backupd_files = self.user_backupd.joinpath("takeout")
@@ -62,7 +63,7 @@ OAuth2 authentication:
         self.user_backupd_files.mkdir(parents=True, exist_ok=True)
 
     def info(self) -> None:
-        print(f"Using rclone remote '{self.google_drive.rclone_remote}' with config at {rclone_config()}")
+        print(f"Using rclone remote '{self.rclone_remote}' with config at {rclone_config()}")
         print(f"Backing up to {self.user_backupd}")
 
     def setup(self, *args: str) -> None:
@@ -72,15 +73,18 @@ OAuth2 authentication:
         return self.google_drive._force_setup()
 
     def _backup(self, subcommand: str, *args: str) -> None:
+        self._sync_and_extract_exports(subcommand)
+
+        print("Backing up takeout files...")
+        self._sync_exports(subcommand)
+
+    def _sync_and_extract_exports(self, subcommand: str) -> None:
         print(f"Starting rclone {subcommand} to download/sync archives...")
-        #self._sync_archives_from_remote(subcommand)
+        self._sync_archives_from_remote(subcommand)
 
         print("Extracting archives...")
         self._extract_exports()
         self._cleanup_extracts()
-
-        print("Backing up takeout files...")
-        self._sync_exports(subcommand)
 
     def _sync_archives_from_remote(self, subcommand: str) -> None:
         rclone(
@@ -88,7 +92,7 @@ OAuth2 authentication:
             "--stats-log-level", "NOTICE",
             "--stats", "1m",
             "--include", "*.tgz", "--include", "*.zip",
-            f"{self.google_drive.rclone_remote}:/Takeout/",
+            f"{self.rclone_remote}:/Takeout/",
             f"{self.user_backupd_archives}/",
         )
 
@@ -139,14 +143,8 @@ OAuth2 authentication:
             print(f"Failed to extract {archive.name}: {e}")
             raise
 
-    def _get_subdirs(self, base_path: Path) -> list[Path]:
-        return sorted(
-            [entry for entry in base_path.iterdir() if entry.is_dir()],
-                key=lambda e: e.name.lower()
-        )
-
     def _get_extract_dirs(self) -> list[Path]:
-        return self._get_subdirs(self.user_backupd_archives)
+        return list_subdirs(self.user_backupd_archives)
     
     def _cleanup_extracts(self) -> None:
         for extract_dir in self._get_extract_dirs():
@@ -167,11 +165,11 @@ OAuth2 authentication:
             
             # Go one-by-one through Google product folders in source export,
             # so we don't remove any product folders that aren't in this export
-            for source_product_dir in self._get_subdirs(source_root_dir):
+            for source_product_dir in list_subdirs(source_root_dir):
                 if source_product_dir.name not in self.SYNC_SUBDIRS_FOR:
                     self._sync_export_subdir(subcommand, source_root_dir, self.user_backupd_files, source_product_dir.name)
                 else:
-                    for source_product_subdir in self._get_subdirs(source_product_dir):
+                    for source_product_subdir in list_subdirs(source_product_dir):
                         self._sync_export_subdir(subcommand, source_root_dir, self.user_backupd_files, f"{source_product_dir.name}/{source_product_subdir.name}")
 
     def _sync_export_subdir(self, subcommand: str, source_root_dir: Path, dest_root_dir: Path, relative_dir: str) -> None:
@@ -185,3 +183,36 @@ OAuth2 authentication:
         
         print(f"Synchronizing files in '{relative_dir}'...")
         rsync(*rsync_flags, f"{source_dir}/", f"{dest_dir}/")
+
+
+class GoogleTakeoutExtensionService(Service):
+    def __init__(self, app_slug: str, username: str):
+        super().__init__(
+            require_username(username, "google_username", "gmail.com"))
+
+        user_slug = slugify(self.username)
+        self.google_takeout = GoogleTakeout(self.username)
+        self.user_backupd = backup_datad(app_slug, user_slug)
+
+        self.user_backupd.mkdir(parents=True, exist_ok=True)
+
+    def info(self) -> None:
+        print(f"Using rclone remote '{self.google_takeout.rclone_remote}' with config at {rclone_config()}")
+        print(f"Using takeout archives in {self.google_takeout.user_backupd_archives}")
+        print(f"Backing up to {self.user_backupd}")
+
+    def setup(self, *args: str) -> None:
+        self.google_takeout.setup()
+
+    def _force_setup(self) -> bool:
+        return self.google_takeout._force_setup()
+
+    def _backup(self, subcommand: str, *args: str) -> None:
+        self.google_takeout._sync_and_extract_exports(subcommand)
+        self._backup_takeout_files(subcommand, *args)
+
+    def _backup_takeout_files(self, subcommand: str, *args: str) -> None:
+        raise NotImplementedError()
+
+    def _get_extract_dirs(self) -> list[Path]:
+        return self.google_takeout._get_extract_dirs()

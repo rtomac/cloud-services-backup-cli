@@ -65,3 +65,11 @@ def require_username(
 
 def slugify(value: str) -> str:
     return "".join(c if c.isalnum() else "_" for c in value.lower())
+
+
+def list_subdirs(parent_dir: str | Path) -> list[Path]:
+    path = Path(parent_dir)
+    return sorted(
+        [entry for entry in path.iterdir() if entry.is_dir()],
+        key=lambda e: e.name.lower()
+    )

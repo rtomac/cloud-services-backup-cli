@@ -3,7 +3,7 @@ import os
 import sys
 import logging
 
-LOG_LEVEL = logging.DEBUG
+LOG_LEVEL = logging.INFO
 
 plugins_path=os.path.join(os.path.dirname(__file__), ".cloud-service-backup")
 sys.path.append(plugins_path)

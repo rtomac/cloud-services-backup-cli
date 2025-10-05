@@ -4,6 +4,10 @@ from tools.rsync import *
 from .google_takeout import *
 
 
+METADATA_SUFFIX_IN = ".supplemental-metada.json"
+METADATA_SUFFIX_OUT = ".meta.json"
+
+
 @register_service("google-takeout-photos")
 class GoogleTakeoutPhotos(GoogleTakeoutAddonService):
     """
@@ -53,7 +57,7 @@ OAuth2 authentication:
 
     def __sync_exports_to_albums(self, subcommand: str) -> None:
         for export in self.google_takeout.list_exports():
-            source_root_dir = export.extract_dir.joinpath("Takeout", "Google Photos")
+            source_root_dir = export.takeout_root_dir().joinpath("Google Photos")
             if not source_root_dir.exists() or not source_root_dir.is_dir(): continue
 
             print(f"Synchronizing albums from export '{export.name}'...")
@@ -62,9 +66,38 @@ OAuth2 authentication:
                 self.__sync_album(subcommand, source_album_dir, dest_album_dir)
 
     def __sync_album(self, subcommand: str, source_album_dir: Path, dest_album_dir: Path) -> None:
-        rsync_flags = ["--archive", "--update", "-v"]
-        if subcommand == "sync":
-            rsync_flags.append("--delete")
+        dest_album_dir.mkdir(parents=True, exist_ok=True)
 
-        print(f"Synchronizing album '{source_album_dir.name}'...")
-        rsync(*rsync_flags, f"{source_album_dir}/", f"{dest_album_dir}/")
+        rsync_flags = ["--archive", "--update", "-v"]
+        rsync_flags += ["--exclude", "*.txt", "--exclude", "*.json"]
+        if subcommand == "sync":
+            rsync_flags += ["--delete"]
+
+        print(f"Synchronizing media files in album '{source_album_dir.name}'...")
+        #rsync(*rsync_flags, f"{source_album_dir}/", f"{dest_album_dir}/")
+
+        print(f"Synchronizing metadata files in album '{source_album_dir.name}'...")
+        self.__sync_metadata(subcommand, source_album_dir, dest_album_dir)
+
+
+    def __sync_metadata(self, subcommand: str, source_album_dir: Path, dest_album_dir: Path) -> None:
+        source_file_stems = [
+            f.name[:-len(METADATA_SUFFIX_IN)] for f in list_files(source_album_dir)
+            if f.name.lower().endswith(METADATA_SUFFIX_IN)
+        ]
+        for source_file_stem in source_file_stems:
+            source_file = source_album_dir.joinpath(source_file_stem + METADATA_SUFFIX_IN)
+            dest_file = dest_album_dir.joinpath(source_file_stem + METADATA_SUFFIX_OUT)
+            rsync("--archive", "--update", "--out-format=%n", f"{source_file}", f"{dest_file}")
+            break
+
+        if subcommand == "sync":
+            dest_file_stems = [
+                f.name[:-len(METADATA_SUFFIX_OUT)] for f in list_files(dest_album_dir)
+                if f.name.lower().endswith(METADATA_SUFFIX_OUT)
+            ]
+            dest_file_stems_del = [x for x in dest_file_stems if x not in source_file_stems]
+            for dest_file_stem in dest_file_stems_del:
+                dest_file = dest_album_dir.joinpath(dest_file_stem + METADATA_SUFFIX_OUT)
+                dest_file.unlink(missing_ok=True)
+                print(f"Removed {dest_file.name}")

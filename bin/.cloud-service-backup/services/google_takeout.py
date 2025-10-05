@@ -89,9 +89,9 @@ OAuth2 authentication:
 
     def list_archive_files(self) -> list[Path]:
         return [
-            e for e in list_files(self.user_backupd_archives)
-                if e.suffix.lower() in {".tgz", ".zip"}
-                    and e.name.lower().startswith("takeout-")
+            f for f in list_files(self.user_backupd_archives)
+            if f.suffix.lower() in {".tgz", ".zip"}
+                and f.name.lower().startswith("takeout-")
         ]
 
     def list_extract_dirs(self) -> list[Path]:
@@ -164,7 +164,7 @@ OAuth2 authentication:
 
     def __sync_exports_to_backup(self, subcommand: str) -> None:
         for export in self.list_exports():
-            source_root_dir = export.extract_dir.joinpath("Takeout")
+            source_root_dir = export.takeout_root_dir()
             if not source_root_dir.exists() or not source_root_dir.is_dir(): continue
 
             print(f"Synchronizing files from export '{export.name}'...")
@@ -196,6 +196,9 @@ class GoogleTakeoutExport:
     name: str
     extract_dir: Path
     archives: list[Path] = field(default_factory=list)
+
+    def takeout_root_dir(self):
+        return self.extract_dir.joinpath("Takeout")
 
 
 class GoogleTakeoutAddonService(Service):

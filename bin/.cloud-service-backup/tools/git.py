@@ -77,7 +77,7 @@ class GitHostService(Service):
             self.service_domain, self.username, self.access_token_file, self.credentials_file)
         print(f"git credentials saved in {self.user_confd}")
 
-    def _should_force_setup(self) -> bool:
+    def setup_required(self) -> bool:
         return not git_has_credentials(self.access_token_file, self.credentials_file)
 
     def _backup(self, subcommand: str, *args: str) -> None:

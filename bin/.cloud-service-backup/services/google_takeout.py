@@ -71,6 +71,9 @@ OAuth2 authentication:
     def setup(self, *args: str) -> None:
         self.google_drive.setup()
 
+    def setup_required(self) -> bool:
+        return self.google_drive.setup_required()
+
     def sync_and_extract_exports(self, subcommand: str) -> None:
         print(f"Starting rclone {subcommand} to download/sync archives...")
         self.__sync_archives_from_remote(subcommand)
@@ -81,9 +84,6 @@ OAuth2 authentication:
 
     def get_extract_dirs(self) -> list[Path]:
         return list_subdirs(self.user_backupd_archives)
-
-    def _should_force_setup(self) -> bool:
-        return self.google_drive._should_force_setup()
 
     def _backup(self, subcommand: str, *args: str) -> None:
         self.sync_and_extract_exports(subcommand)
@@ -206,8 +206,8 @@ class GoogleTakeoutAddonService(Service):
     def setup(self, *args: str) -> None:
         self.google_takeout.setup()
 
-    def _should_force_setup(self) -> bool:
-        return self.google_takeout._should_force_setup()
+    def setup_required(self) -> bool:
+        return self.google_takeout.setup_required()
 
     def _backup(self, subcommand: str, *args: str) -> None:
         self.google_takeout.sync_and_extract_exports(subcommand)

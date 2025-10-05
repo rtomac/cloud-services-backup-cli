@@ -111,7 +111,7 @@ OAuth2 authentication:
 
         print(f"Created auth token for user {self.username}")
 
-    def _should_force_setup(self) -> bool:
+    def setup_required(self) -> bool:
         return not self.token_file.exists()
 
     def _backup(self, subcommand: str, *args: str) -> None:

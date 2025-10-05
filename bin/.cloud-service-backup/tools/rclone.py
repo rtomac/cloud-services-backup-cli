@@ -94,7 +94,7 @@ class RcloneService(Service):
 
         print(f"rclone remote '{self.rclone_remote}' setup succeeded ")
 
-    def _should_force_setup(self) -> bool:
+    def setup_required(self) -> bool:
         return not rclone_has_remote(self.rclone_remote)
 
     @abstractmethod

@@ -29,6 +29,10 @@ class Service(ABC):
     def setup(self, *args: str) -> None:
         raise NotImplementedError()
 
+    @abstractmethod
+    def setup_required(self) -> bool:
+        raise NotImplementedError()
+
     def copy(self, *args: str) -> None:
         self.backup("copy", *args)
 
@@ -36,13 +40,9 @@ class Service(ABC):
         self.backup("sync", *args)
 
     def backup(self, subcommand: str, *args: str) -> None:
-        if self._should_force_setup():
+        if self.setup_required():
             self.setup(*args)
         self._backup(subcommand, *args)
-
-    @abstractmethod
-    def _should_force_setup(self) -> bool:
-        raise NotImplementedError()
 
     @abstractmethod
     def _backup(self, subcommand: str, *args: str) -> None:

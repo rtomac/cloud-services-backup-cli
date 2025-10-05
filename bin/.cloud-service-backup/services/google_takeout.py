@@ -224,7 +224,7 @@ class GoogleTakeoutAddonService(Service):
         return self.google_takeout.setup_required()
 
     def _backup(self, subcommand: str, *args: str) -> None:
-        #self.google_takeout.sync_archives_from_remote(subcommand)
+        self.google_takeout.sync_archives_from_remote(subcommand)
         self.google_takeout.extract_archives(subcommand)
         self._backup_takeout_files(subcommand, *args)
 

@@ -74,7 +74,7 @@ OAuth2 authentication:
             rsync_flags += ["--delete"]
 
         print(f"Synchronizing media files in album '{source_album_dir.name}'...")
-        #rsync(*rsync_flags, f"{source_album_dir}/", f"{dest_album_dir}/")
+        rsync(*rsync_flags, f"{source_album_dir}/", f"{dest_album_dir}/")
 
         print(f"Synchronizing metadata files in album '{source_album_dir.name}'...")
         self.__sync_metadata(subcommand, source_album_dir, dest_album_dir)

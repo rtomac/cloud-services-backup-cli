@@ -80,6 +80,7 @@ class RcloneService(Service):
 
         self.user_backupd.mkdir(parents=True, exist_ok=True)
 
+    def info(self) -> None:
         print(f"Using rclone remote '{self.rclone_remote}' with config at {rclone_config()}")
         print(f"Backing up to {self.user_backupd}")
 

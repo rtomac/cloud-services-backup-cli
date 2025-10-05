@@ -3,7 +3,7 @@ import os
 import sys
 import logging
 
-LOG_LEVEL = logging.INFO
+LOG_LEVEL = logging.DEBUG
 
 plugins_path=os.path.join(os.path.dirname(__file__), ".cloud-service-backup")
 sys.path.append(plugins_path)
@@ -37,6 +37,7 @@ def main(argv: list[str]) -> int:
     
     username = argv[3] if len(argv) > 3 else None
     service = service_type(username)
+    service.info()
     try:
         func = getattr(service, subcommand)
         func(*argv[4:])

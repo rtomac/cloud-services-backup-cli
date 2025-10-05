@@ -18,6 +18,9 @@ class Service:
     def __init__(self, username: str):
         self.username = username
 
+    def info(self) -> None:
+        raise NotImplementedError()
+
     def setup(self, *args: str) -> None:
         raise NotImplementedError()
 

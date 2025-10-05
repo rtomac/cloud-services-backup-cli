@@ -69,6 +69,7 @@ OAuth2 authentication:
         self.user_confd.mkdir(parents=True, exist_ok=True)
         self.user_backupd.mkdir(parents=True, exist_ok=True)
 
+    def info(self) -> None:
         print(f"Using config at {self.user_confd}")
         print(f"Backing up to {self.user_backupd}")
 

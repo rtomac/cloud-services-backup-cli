@@ -55,7 +55,7 @@ OAuth2 authentication:
             "--stats-log-level", "NOTICE",
             "--stats", "1m",
             *flags,
-            f"{self.rclone_remote}:media/by-year/{year}/",
+            f"{self.rclone_remote}:/media/by-year/{year}/",
             f"{year_backupd}/",
         )
     

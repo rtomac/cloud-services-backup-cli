@@ -1,11 +1,8 @@
 from pathlib import Path
+import tempfile
 from lib import *
 from tools.rsync import *
 from .google_takeout import *
-
-
-METADATA_SUFFIX_IN = ".supplemental-metada.json"
-METADATA_SUFFIX_OUT = ".meta.json"
 
 
 @register_service("google-takeout-photos")
@@ -69,34 +66,37 @@ OAuth2 authentication:
         dest_album_dir.mkdir(parents=True, exist_ok=True)
 
         rsync_flags = ["--archive", "--update", "-v"]
-        rsync_flags += ["--exclude", "*.txt", "--exclude", "*.json"]
         if subcommand == "sync":
             rsync_flags += ["--delete"]
 
         print(f"Synchronizing media files in album '{source_album_dir.name}'...")
-        rsync(*rsync_flags, f"{source_album_dir}/", f"{dest_album_dir}/")
+        rsync(*rsync_flags, "--exclude", "*.txt", "--exclude", "*.json", f"{source_album_dir}/", f"{dest_album_dir}/")
 
         print(f"Synchronizing metadata files in album '{source_album_dir.name}'...")
-        self.__sync_metadata(subcommand, source_album_dir, dest_album_dir)
+        self.__sync_metadata(rsync_flags, source_album_dir, dest_album_dir)
 
 
-    def __sync_metadata(self, subcommand: str, source_album_dir: Path, dest_album_dir: Path) -> None:
-        source_file_stems = [
-            f.name[:-len(METADATA_SUFFIX_IN)] for f in list_files(source_album_dir)
-            if f.name.lower().endswith(METADATA_SUFFIX_IN)
-        ]
-        for source_file_stem in source_file_stems:
-            source_file = source_album_dir.joinpath(source_file_stem + METADATA_SUFFIX_IN)
-            dest_file = dest_album_dir.joinpath(source_file_stem + METADATA_SUFFIX_OUT)
-            rsync("--archive", "--update", "--out-format=%n", f"{source_file}", f"{dest_file}")
+    def __sync_metadata(self, rsync_flags: list[str], source_album_dir: Path, dest_album_dir: Path) -> None:
+        # Sync json metadata files separately here, so we can handle absurdly named
+        # ".supplemental-metadata.json" files with suffixes that are 1) very long and
+        # 2) variably named based on the length of the media file name, which makes
+        # them difficult to check for on file system. We'll rename these ".meta.json".
 
-        if subcommand == "sync":
-            dest_file_stems = [
-                f.name[:-len(METADATA_SUFFIX_OUT)] for f in list_files(dest_album_dir)
-                if f.name.lower().endswith(METADATA_SUFFIX_OUT)
-            ]
-            dest_file_stems_del = [x for x in dest_file_stems if x not in source_file_stems]
-            for dest_file_stem in dest_file_stems_del:
-                dest_file = dest_album_dir.joinpath(dest_file_stem + METADATA_SUFFIX_OUT)
-                dest_file.unlink(missing_ok=True)
-                print(f"Removed {dest_file.name}")
+        def is_suppl_meta_file(f: Path) -> bool:
+            return len(f.suffixes) >= 3 and ".supplemental-metadata".startswith(f.suffixes[-2].lower())
+        
+        def rename_suppl_meta_file(f: Path) -> bool:
+            return f.with_suffix('').with_suffix('').name + ".meta.json"
+
+        # Use temp dir with hard-linked renamed files so we can ultimately 
+        # just do an efficient rsync for these files as well.
+        with tempfile.TemporaryDirectory() as tmp_dir_path:
+            tmp_dir = Path(tmp_dir_path)
+            json_files = [f for f in list_files(source_album_dir) if f.suffix.lower() == ".json"]
+            for json_file in json_files:
+                dest_file_name = json_file.name
+                if is_suppl_meta_file(json_file):
+                    dest_file_name = rename_suppl_meta_file(json_file)
+                os.link(json_file, tmp_dir.joinpath(dest_file_name))
+            
+            rsync(*rsync_flags, "--include", "*.json", "--exclude", "*", f"{tmp_dir}/", f"{dest_album_dir}/")

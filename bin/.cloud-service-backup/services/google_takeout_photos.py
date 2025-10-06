@@ -49,18 +49,36 @@ OAuth2 authentication:
 
     def _backup_takeout_files(self, subcommand: str, *args: str) -> None:
         print("Backing up from local takeout backup...")
-        self.__sync_exports_to_albums(subcommand)
+        self.__sync_exports_to_albums(subcommand, *args)
 
 
-    def __sync_exports_to_albums(self, subcommand: str) -> None:
+    def __list_albums_to_sync(self, *args: str) -> list[(GoogleTakeoutExport, Path)]:
+        albums_dict = {}
+
         for export in self.google_takeout.list_exports():
-            source_root_dir = export.takeout_root_dir().joinpath("Google Photos")
-            if not source_root_dir.exists() or not source_root_dir.is_dir(): continue
+            albums_root_dir = export.takeout_root_dir().joinpath("Google Photos")
+            if not albums_root_dir.exists() or not albums_root_dir.is_dir(): continue
 
-            print(f"Synchronizing albums from export '{export.name}'...")
-            for source_album_dir in list_subdirs(source_root_dir):
-                dest_album_dir = self.user_backupd_albums.joinpath(source_album_dir.name)
-                self.__sync_album(subcommand, source_album_dir, dest_album_dir)
+            for album_dir in list_subdirs(albums_root_dir):
+                albums_dict[album_dir.name] = (export, album_dir)
+                logging.debug(f"Found album '{album_dir.name}' in export '{export.name}'")
+
+        albums_list = sorted(albums_dict.values(), key=lambda x: (x[0].name, x[1].name))
+        if len(args):
+            args_lower = set(a.lower().strip() for a in args)
+            albums_list = [a for a in albums_list if a[1].name.lower().strip() in args_lower]
+        [logging.debug(f"Will sync album '{source_album_dir.name}' from export '{export.name}'")
+            for (export, source_album_dir) in albums_list]
+
+        return albums_list
+
+
+    def __sync_exports_to_albums(self, subcommand: str, *args: str) -> None:
+        for album in self.__list_albums_to_sync(*args):
+            (export, source_album_dir) = album
+            print(f"Synchronizing album '{source_album_dir.name}' in export '{export.name}'")
+            dest_album_dir = self.user_backupd_albums.joinpath(source_album_dir.name)
+            self.__sync_album(subcommand, source_album_dir, dest_album_dir)
 
     def __sync_album(self, subcommand: str, source_album_dir: Path, dest_album_dir: Path) -> None:
         dest_album_dir.mkdir(parents=True, exist_ok=True)

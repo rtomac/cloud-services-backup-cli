@@ -70,17 +70,22 @@ OAuth2 authentication:
             rsync_flags += ["--delete"]
 
         print(f"Synchronizing media files in album '{source_album_dir.name}'...")
-        rsync(*rsync_flags, "--exclude", "*.txt", "--exclude", "*.json", f"{source_album_dir}/", f"{dest_album_dir}/")
+        self.__sync_media(rsync_flags, source_album_dir, dest_album_dir)
 
         print(f"Synchronizing metadata files in album '{source_album_dir.name}'...")
         self.__sync_metadata(rsync_flags, source_album_dir, dest_album_dir)
 
+    def __sync_media(self, rsync_flags: list[str], source_album_dir: Path, dest_album_dir: Path) -> None:
+        rsync(*rsync_flags, "--exclude", "*.txt", "--exclude", "*.json", f"{source_album_dir}/", f"{dest_album_dir}/")
 
     def __sync_metadata(self, rsync_flags: list[str], source_album_dir: Path, dest_album_dir: Path) -> None:
         # Sync json metadata files separately here, so we can handle absurdly named
         # ".supplemental-metadata.json" files with suffixes that are 1) very long and
         # 2) variably named based on the length of the media file name, which makes
         # them difficult to check for on file system. We'll rename these ".meta.json".
+        # 
+        # Use temp dir with hard-linked renamed files so we can ultimately 
+        # just do an efficient rsync for these files as well.
 
         def is_suppl_meta_file(f: Path) -> bool:
             return len(f.suffixes) >= 3 and ".supplemental-metadata".startswith(f.suffixes[-2].lower())
@@ -88,8 +93,6 @@ OAuth2 authentication:
         def rename_suppl_meta_file(f: Path) -> bool:
             return f.with_suffix('').with_suffix('').name + ".meta.json"
 
-        # Use temp dir with hard-linked renamed files so we can ultimately 
-        # just do an efficient rsync for these files as well.
         with tempfile.TemporaryDirectory() as tmp_dir_path:
             tmp_dir = Path(tmp_dir_path)
             json_files = [f for f in list_files(source_album_dir) if f.suffix.lower() == ".json"]

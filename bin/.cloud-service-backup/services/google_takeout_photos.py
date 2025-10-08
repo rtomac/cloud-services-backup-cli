@@ -2,6 +2,7 @@ from pathlib import Path
 import tempfile
 from lib import *
 from tools.rsync import *
+from tools.media import *
 from .google_takeout import *
 
 
@@ -93,6 +94,9 @@ OAuth2 authentication:
         print(f"Synchronizing metadata files in album '{source_album_dir.name}'...")
         self.__sync_metadata(rsync_flags, source_album_dir, dest_album_dir)
 
+        print(f"Creating album manifest for album '{source_album_dir.name}'...")
+        self.__create_album_manifest(dest_album_dir)
+
     def __sync_media(self, rsync_flags: list[str], source_album_dir: Path, dest_album_dir: Path) -> None:
         rsync(*rsync_flags, "--exclude", "*.txt", "--exclude", "*.json", f"{source_album_dir}/", f"{dest_album_dir}/")
 
@@ -121,3 +125,36 @@ OAuth2 authentication:
                 os.link(json_file, tmp_dir.joinpath(dest_file_name))
             
             rsync(*rsync_flags, "--include", "*.json", "--exclude", "*", f"{tmp_dir}/", f"{dest_album_dir}/")
+
+    def __create_album_manifest(self, dest_album_dir: Path) -> None:
+        manifest_file = dest_album_dir.joinpath("manifest.txt")
+        manifest_lines = []
+        manifest_existing = {}
+
+        # Read existing manifest
+        if manifest_file.exists():
+            with open(manifest_file, "r") as file:
+                for line in file:
+                    (year, month, file_name) = line.strip().split("/")
+                    manifest_existing[file_name.lower()] = line.strip()
+
+        # Add new files
+        for file in list_files(dest_album_dir):
+            if file.suffix.lower() == ".txt" or file.suffix.lower() == ".json": continue
+            if file.name.startswith("."): continue
+
+            existing_line = manifest_existing.get(file.name.lower())
+            if existing_line:
+                manifest_lines.append(existing_line)
+                continue
+
+            dt = MediaFileInfo(file).get_create_timestamp()
+            year_mo = dt.strftime("%Y/%m")
+            manifest_lines.append(f"{year_mo}/{file.name}")
+
+        # Write updated manifest file
+        with open(manifest_file, "w") as file:
+            for line in manifest_lines:
+                file.write(line + "\n")
+
+        print(f"Wrote manifest with {len(manifest_lines)} total line(s), {len(manifest_lines) - len(manifest_existing)} new line(s)")

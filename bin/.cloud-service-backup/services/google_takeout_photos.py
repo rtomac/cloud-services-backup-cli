@@ -84,9 +84,11 @@ OAuth2 authentication:
     def __sync_album(self, subcommand: str, source_album_dir: Path, dest_album_dir: Path) -> None:
         dest_album_dir.mkdir(parents=True, exist_ok=True)
 
-        rsync_flags = ["--archive", "--update", "-v"]
-        if subcommand == "sync":
-            rsync_flags += ["--delete"]
+        rsync_flags = ["--archive", "-v"]
+        if subcommand == "copy":
+            rsync_flags += ["--ignore-existing"]
+        elif subcommand == "sync":
+            rsync_flags += ["--update", "--delete"]
 
         print(f"Synchronizing media files in album '{source_album_dir.name}'...")
         self.__sync_media(rsync_flags, source_album_dir, dest_album_dir)
@@ -95,7 +97,7 @@ OAuth2 authentication:
         self.__sync_metadata(rsync_flags, source_album_dir, dest_album_dir)
 
         print(f"Writing manifest for album '{source_album_dir.name}'...")
-        self.__create_album_manifest(dest_album_dir)
+        self.__write_album_manifest(dest_album_dir)
 
     def __sync_media(self, rsync_flags: list[str], source_album_dir: Path, dest_album_dir: Path) -> None:
         rsync(*rsync_flags, "--exclude", "*.txt", "--exclude", "*.json", f"{source_album_dir}/", f"{dest_album_dir}/")
@@ -126,7 +128,7 @@ OAuth2 authentication:
             
             rsync(*rsync_flags, "--include", "*.json", "--exclude", "*", f"{tmp_dir}/", f"{dest_album_dir}/")
 
-    def __create_album_manifest(self, dest_album_dir: Path) -> None:
+    def __write_album_manifest(self, dest_album_dir: Path) -> None:
         manifest_file = dest_album_dir.joinpath("manifest.txt")
         manifest_lines = []
         manifest_existing = {}

@@ -94,7 +94,7 @@ OAuth2 authentication:
         print(f"Synchronizing metadata files in album '{source_album_dir.name}'...")
         self.__sync_metadata(rsync_flags, source_album_dir, dest_album_dir)
 
-        print(f"Creating album manifest for album '{source_album_dir.name}'...")
+        print(f"Writing manifest for album '{source_album_dir.name}'...")
         self.__create_album_manifest(dest_album_dir)
 
     def __sync_media(self, rsync_flags: list[str], source_album_dir: Path, dest_album_dir: Path) -> None:
@@ -130,6 +130,7 @@ OAuth2 authentication:
         manifest_file = dest_album_dir.joinpath("manifest.txt")
         manifest_lines = []
         manifest_existing = {}
+        manifest_updates = 0
 
         # Read existing manifest
         if manifest_file.exists():
@@ -151,10 +152,13 @@ OAuth2 authentication:
             dt = MediaFileInfo(file).get_create_timestamp()
             year_mo = dt.strftime("%Y/%m")
             manifest_lines.append(f"{year_mo}/{file.name}")
+            manifest_updates += 1
 
         # Write updated manifest file
-        with open(manifest_file, "w") as file:
-            for line in manifest_lines:
-                file.write(line + "\n")
-
-        print(f"Wrote manifest with {len(manifest_lines)} total line(s), {len(manifest_lines) - len(manifest_existing)} new line(s)")
+        if manifest_updates > 0:
+            with open(manifest_file, "w") as file:
+                for line in manifest_lines:
+                    file.write(line + "\n")
+            print(f"Wrote updated manifest with {len(manifest_lines)} total line(s), {len(manifest_lines) - len(manifest_existing)} new line(s)")
+        else:
+            print(f"Manifest already up to date with {len(manifest_lines)} line(s)")

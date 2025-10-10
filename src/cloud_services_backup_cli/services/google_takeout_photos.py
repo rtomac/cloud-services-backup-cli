@@ -159,7 +159,7 @@ OAuth2 authentication:
         def rename_suppl_meta_file(f: Path) -> bool:
             return f.with_suffix('').with_suffix('').name + ".meta.json"
 
-        with tempfile.TemporaryDirectory() as tmp_dir_path:
+        with tempfile.TemporaryDirectory(dir=backup_tmpd()) as tmp_dir_path:
             tmp_dir = Path(tmp_dir_path)
             json_files = [f for f in list_files(source_album_dir) if f.suffix.lower() == ".json"]
             for json_file in json_files:

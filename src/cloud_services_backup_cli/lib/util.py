@@ -10,6 +10,11 @@ def backup_confd(*args: str) -> Path:
 def backup_datad(*args: str) -> Path:
     return Path(os.environ["CLOUD_BACKUP_DATAD"]).joinpath(*args)
 
+def backup_tmpd() -> Path:
+    tmpd = backup_datad("tmp")
+    tmpd.mkdir(parents=True, exist_ok=True)
+    return tmpd
+
 def google_oauth_creds() -> tuple[str, str] | None:
     client_id = os.environ.get("GOOGLE_OAUTH_CLIENT_ID")
     client_secret = os.environ.get("GOOGLE_OAUTH_CLIENT_SECRET")

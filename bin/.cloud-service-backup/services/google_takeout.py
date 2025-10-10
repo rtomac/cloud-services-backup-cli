@@ -17,11 +17,10 @@ class GoogleTakeout(Service):
     """
 Backs up files from Google Takeout archives that are
 created and saved into Google Drive (one of the options
-Google Takeout provides). Uses rclone with a 'drive'
-remote to download the archive files, extracts them into
-export folders, and then syncs them into a single
-backup folder that will store the latest export for each
-Google product.
+Google Takeout provides). Uses rclone to download the
+archive files, extracts them into export folders, and
+then syncs them into a single backup folder that will
+store the latest export for each Google product.
 
 The idea here is to allow a user to manually schedule Takeout
 archives but automate it all the rest of the way. Google allows
@@ -42,6 +41,25 @@ Subcommands:
         folder, removing any files that were removed in the export.
         However, will not touch any product folders that aren't
         included in the export.
+
+How this works:
+- Use rclone with a 'drive' remote, the same remote used for the
+  'google-drive' service. Downloads archive files (only) from
+  the 'Takeout' folder in Google Drive into a local 'archives' folder.
+  If 'sync', will also delete any local archive files that were
+  removed from Google Drive.
+- Detects which archive files belong to the same export and extracts
+  them into "joined" export folders in the 'archives' folder.
+- Will clean up any export folders that no longer have corresponding
+  archive files.
+- Syncs files from each export into the 'takeout' backup folder.
+- Syncs files by Google product folder, so that product folders
+  that aren't included in the export are not touched.
+- Will only overwrite files where the modification time is newer
+  than the existing file in the backup folder.
+- If 'sync', will delete files in the backup folder that were
+  removed in the export, but only for product folders that are
+  included in the export.
 
 OAuth2 authentication:
   If you are providing your own Google OAuth2 client (via environment

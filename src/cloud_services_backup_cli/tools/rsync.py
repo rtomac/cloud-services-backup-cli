@@ -1,7 +1,8 @@
 import subprocess
 from subprocess import CompletedProcess
-from lib import *
-from tools import shell
+
+from ..lib import *
+from . import shell
 
 
 def rsync(*args: str) -> CompletedProcess:

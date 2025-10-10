@@ -3,8 +3,9 @@ import os
 import subprocess
 from subprocess import CompletedProcess
 from pathlib import Path
-from lib import *
-from tools import shell
+
+from ..lib import *
+from . import shell
 
 
 def git_set_credentials(repo_host: str, git_username: str, access_token_file: Path, credentials_file: Path) -> None:

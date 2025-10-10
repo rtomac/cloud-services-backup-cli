@@ -14,8 +14,8 @@ import piexif
 from hachoir.parser import createParser
 from hachoir.metadata import extractMetadata
 
-from lib import *
-from tools import shell
+from ..lib import *
+from . import shell
 
 
 JPEG_EXTS = [ ".jpg", ".jpeg" ]

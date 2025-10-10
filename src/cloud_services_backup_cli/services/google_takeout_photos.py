@@ -1,8 +1,9 @@
 from pathlib import Path
 import tempfile
-from lib import *
-from tools.rsync import *
-from tools.media import *
+
+from ..lib import *
+from ..tools.rsync import *
+from ..tools.media import *
 from .google_takeout import *
 
 

@@ -6,9 +6,10 @@ import shutil
 import tarfile
 import zipfile
 from pathlib import Path
-from lib import *
-from tools.rclone import *
-from tools.rsync import *
+
+from ..lib import *
+from ..tools.rclone import *
+from ..tools.rsync import *
 from .google_drive import GoogleDrive
 
 

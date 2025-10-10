@@ -1,6 +1,7 @@
 import requests
-from lib import *
-from tools.git import *
+
+from ..lib import *
+from ..tools.git import *
 
 
 @register_service("github")

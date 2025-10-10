@@ -1,5 +1,5 @@
-from lib import *
-from tools.rclone import *
+from ..lib import *
+from ..tools.rclone import *
 
 
 @register_service("google-drive")

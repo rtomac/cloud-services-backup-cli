@@ -1,25 +1,27 @@
-#!/usr/bin/env python3
 import os
 import sys
 import logging
 
+from .lib import *
+from . import services
+
 LOG_LEVEL = logging.INFO
 
-plugins_path=os.path.join(os.path.dirname(__file__), ".cloud-service-backup")
-sys.path.append(plugins_path)
-
-from lib import *
-import services
+dirname = os.path.dirname(__file__)
+usage_file_path = os.path.join(dirname, "USAGE.txt")
 
 
-def main(argv: list[str]) -> int:
+def main():
+    run(sys.argv)
+
+def run(argv: list[str]) -> None:
     setup_logging()
     check_env()
 
     command = argv[1] if len(argv) > 1 else "help"
     if command in ("", "help"):
         usage()
-        return 0
+        sys.exit(0)
     
     service_slug = command
     try:
@@ -33,7 +35,7 @@ def main(argv: list[str]) -> int:
 
     if subcommand == "help":
         service_usage(service_type)
-        return 0
+        sys.exit(0)
     
     username = argv[3] if len(argv) > 3 else None
     service = service_type(username)
@@ -44,7 +46,7 @@ def main(argv: list[str]) -> int:
     except KeyboardInterrupt:
         print("Keyboard interrupt detected, exiting...")
         
-    return 0
+    sys.exit(0)
 
 def setup_logging() -> None:
     stdout = logging.StreamHandler(sys.stdout)
@@ -73,8 +75,7 @@ def check_env() -> None:
     os.makedirs(os.environ["CLOUD_BACKUP_DATAD"], exist_ok=True)
 
 def usage() -> None:
-    usage_file = os.path.join(plugins_path, "USAGE.txt")
-    with open(usage_file) as f:
+    with open(usage_file_path) as f:
         print_usage(f.read())
 
 def service_usage(service_type: type) -> None:
@@ -83,4 +84,4 @@ def service_usage(service_type: type) -> None:
 
 
 if __name__ == '__main__':
-    sys.exit(main(sys.argv))
+    main()

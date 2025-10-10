@@ -3,8 +3,9 @@ import subprocess
 from subprocess import CompletedProcess
 import shutil
 from pathlib import Path
-from lib import *
-from tools import shell
+
+from ..lib import *
+from . import shell
 
 
 def gyb(opts: dict, *args: str) -> CompletedProcess:

@@ -1,6 +1,7 @@
 import json
-from lib import *
-from tools.gyb import *
+
+from ..lib import *
+from ..tools.gyb import *
 
 
 @register_service("gmail")

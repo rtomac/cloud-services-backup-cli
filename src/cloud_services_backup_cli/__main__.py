@@ -5,7 +5,7 @@ import logging
 from .lib import *
 from . import services
 
-LOG_LEVEL = logging.INFO
+LOG_LEVEL = getattr(logging, os.environ.get("LOG_LEVEL", "INFO").upper(), logging.INFO)
 
 dirname = os.path.dirname(__file__)
 usage_file_path = os.path.join(dirname, "USAGE.txt")

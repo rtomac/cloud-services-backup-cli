@@ -50,7 +50,11 @@ How this works:
   album. Albums that aren't included in the export are not touched.
 - Generates a manifest.txt file in each album folder that lists
   all media files in the album, organized by year/month.
-- Add note on exif
+- Year/month is determined by the creation date of the media file.
+  Several strategies are used to determine the create date, including
+  EXIF metadata, video container metadata, JSON metadata, file
+  name patterns, and finally falling back to shelling out to
+  exiftool.
 - Then, syncs media files and JSON metadata files from the album
   to the 'library' folder by date and month, as specified in the
   manifest file, using hard links to avoid using additional

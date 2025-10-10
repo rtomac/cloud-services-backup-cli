@@ -1,7 +1,7 @@
 Runs a backup operation for data in the specified cloud service.
 
 Usage:
-  cloud-service-backup <service> <operation> <user> [<args>...]
+  cloud-service-backup <service> <operation> <username> [<args>...]
   cloud-service-backup help
   cloud-service-backup <service> help
 

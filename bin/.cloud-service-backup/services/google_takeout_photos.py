@@ -168,7 +168,7 @@ OAuth2 authentication:
 
     def __write_album_manifest(self, dest_album_dir: Path) -> None:
         manifest_file = dest_album_dir.joinpath("manifest.txt")
-        manifest_lines = []
+        manifest_new = []
         manifest_existing = {}
         manifest_updates = 0
 
@@ -176,7 +176,7 @@ OAuth2 authentication:
         if manifest_file.exists():
             manifest = self.__read_manifest_file(manifest_file)
             for year, month, file_name in manifest:
-                manifest_existing[file_name.lower()] = f"{year}/{month}/{file_name}"
+                manifest_existing[file_name.lower()] = (year, month, file_name)
 
         # Add new files
         for file in list_files(dest_album_dir):
@@ -185,22 +185,19 @@ OAuth2 authentication:
 
             existing_line = manifest_existing.get(file.name.lower())
             if existing_line:
-                manifest_lines.append(existing_line)
+                manifest_new.append(existing_line)
                 continue
 
             dt = MediaFileInfo(file).get_create_timestamp()
-            year_mo = dt.strftime("%Y/%m")
-            manifest_lines.append(f"{year_mo}/{file.name}")
+            manifest_new.append((dt.strftime("%Y"), dt.strftime("%m"), file.name))
             manifest_updates += 1
 
         # Write updated manifest file
         if manifest_updates > 0:
-            with open(manifest_file, "w") as file:
-                for line in manifest_lines:
-                    file.write(line + "\n")
-            print(f"Wrote updated manifest with {len(manifest_lines)} total line(s), {manifest_updates} updates(s)")
+            self.__write_manifest_file(manifest_file, manifest_new)
+            print(f"Wrote updated manifest with {len(manifest_new)} total line(s), {manifest_updates} updates(s)")
         else:
-            print(f"Manifest already up to date with {len(manifest_lines)} line(s)")
+            print(f"Manifest already up to date with {len(manifest_new)} line(s)")
 
     def __read_manifest_file(self, manifest_file: Path) -> tuple[str, str, str]:
         manifest = []
@@ -208,6 +205,12 @@ OAuth2 authentication:
             for line in file:
                 (year, month, file_name) = line.strip().split("/")
                 manifest.append((year, month, file_name))
+        return manifest
+
+    def __write_manifest_file(self, manifest_file: Path, manifest: list[tuple[str, str, str]]) -> None:
+        with open(manifest_file, "w") as file:
+            for year, month, file_name in manifest:
+                file.write(f"{year}/{month}/{file_name}\n")
         return manifest
 
 

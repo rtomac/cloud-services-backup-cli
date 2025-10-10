@@ -1,62 +1,86 @@
-#!/bin/bash
+#!/usr/bin/env python3
+import os
+import sys
+import logging
 
-# Backward compat for old env var names
-[ -n "${BACKUPCONFD:-}" ] && export CLOUD_BACKUP_CONFD="$BACKUPCONFD"
-[ -n "${BACKUPDATAD:-}" ] && export CLOUD_BACKUP_DATAD="$BACKUPDATAD"
+LOG_LEVEL = logging.INFO
 
-: "${CLOUD_BACKUP_CONFD:?Environment variable CLOUD_BACKUP_CONFD is expected}"
-: "${CLOUD_BACKUP_DATAD:?Environment variable CLOUD_BACKUP_DATAD is expected}"
-mkdir -p "$CLOUD_BACKUP_CONFD"
-mkdir -p "$CLOUD_BACKUP_DATAD"
+plugins_path=os.path.join(os.path.dirname(__file__), ".cloud-service-backup")
+sys.path.append(plugins_path)
 
-dir_path=$(dirname $(readlink -f $0))
-plugins_path=${dir_path}/.cloud-service-backup
-services_path=${plugins_path}/services
-tools_path=${plugins_path}/tools
+from lib import *
+import services
 
-for tool_script in "${tools_path}"/lib/*.sh; do
-    [ -f "$tool_script" ] && source "$tool_script"
-done
 
-for service_script in "${services_path}"/*.sh; do
-    [ -f "$service_script" ] && source "$service_script"
-done
+def main(argv: list[str]) -> int:
+    setup_logging()
+    check_env()
 
-command=$1
-case $command in
+    command = argv[1] if len(argv) > 1 else "help"
+    if command in ("", "help"):
+        usage()
+        return 0
+    
+    service_slug = command
+    try:
+        service_type = resolve_service(service_slug)
+    except KeyError:
+        error(f"Invalid service '{service_slug}'")
 
-    ""|"help")
-        cat "${plugins_path}/USAGE.txt"
-        echo ""
-        ;;
+    subcommand = argv[2] if len(argv) > 2 else "help"
+    if subcommand not in ("help", "setup", "copy", "sync"):
+        error(f"Invalid subcommand '{subcommand}'")
 
-    *)
-        service=${command}
-        service_slug=${service//[^[:alnum:]]/_}
-        fn_service_init=svc_${service_slug}_init
-        if ! declare -f "$fn_service_init" > /dev/null; then
-            echo "Invalid service '$service'" 1>&2
-            exit 1
-        fi
+    if subcommand == "help":
+        service_usage(service_type)
+        return 0
+    
+    username = argv[3] if len(argv) > 3 else None
+    service = service_type(username)
+    service.info()
+    try:
+        func = getattr(service, subcommand)
+        func(*argv[4:])
+    except KeyboardInterrupt:
+        print("Keyboard interrupt detected, exiting...")
+        
+    return 0
 
-        subcommand=$2
-        case "${subcommand}" in
-            ""|"help")
-                fn_service_help=svc_${service_slug}_help
-                $fn_service_help $@
-                echo ""
-                exit 0
-                ;;
-            "setup"|"copy"|"sync")
-                fn_service_subcommand=svc_${service_slug}_${subcommand}
-                shift 2
-                $fn_service_init $@
-                $fn_service_subcommand $@
-                ;;
-            *)
-                echo "Invalid subcommand, must be one of: setup, copy, sync" 1>&2
-                exit 1
-                ;;
-        esac
-        ;;
-esac
+def setup_logging() -> None:
+    stdout = logging.StreamHandler(sys.stdout)
+    stdout.addFilter(lambda r: r.levelno <= logging.INFO)
+
+    stderr = logging.StreamHandler(sys.stderr)
+    stderr.setLevel(logging.WARNING)
+
+    logging.basicConfig(level=LOG_LEVEL, format="%(message)s", handlers=[ stdout, stderr ])
+
+def check_env() -> None:
+    # Backward compat for old env var names
+    if os.environ.get("BACKUPCONFD"):
+        os.environ.setdefault("CLOUD_BACKUP_CONFD", os.environ["BACKUPCONFD"])
+    if os.environ.get("BACKUPDATAD"):
+        os.environ.setdefault("CLOUD_BACKUP_DATAD", os.environ["BACKUPDATAD"])
+
+    # Ensure required env vars
+    if not os.environ.get("CLOUD_BACKUP_CONFD"):
+        error("Environment variable CLOUD_BACKUP_CONFD is expected")
+    if not os.environ.get("CLOUD_BACKUP_DATAD"):
+        error("Environment variable CLOUD_BACKUP_DATAD is expected")
+
+    # Ensure directories exist
+    os.makedirs(os.environ["CLOUD_BACKUP_CONFD"], exist_ok=True)
+    os.makedirs(os.environ["CLOUD_BACKUP_DATAD"], exist_ok=True)
+
+def usage() -> None:
+    usage_file = os.path.join(plugins_path, "USAGE.txt")
+    with open(usage_file) as f:
+        print_usage(f.read())
+
+def service_usage(service_type: type) -> None:
+    usage_text = get_service_usage(service_type)
+    print_usage(usage_text)
+
+
+if __name__ == '__main__':
+    sys.exit(main(sys.argv))

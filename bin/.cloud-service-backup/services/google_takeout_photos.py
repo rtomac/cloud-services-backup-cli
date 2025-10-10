@@ -18,17 +18,20 @@ For more information on how this works, see:
 Subcommands:
   setup <google_username>
         Runs an auth flow with Google to create an access token.
-  copy <google_username>
+  copy <google_username> [<album_name> ...]
         Downloads archive files and syncs albums to the
         albums directory in the backup dir. Additive only,
         will not remove any existing files in the backup dir.
-  sync <google_username>
+        Limited to albums specified on the command line, or
+        all albums if none are specified.
+  sync <google_username> [<album_name> ...]
         Downloads archive files and syncs albums to the
-        albums directory in the backup dir. For albums
-        included in the export, will sync them fully to the backup
-        folder, removing any photos that were removed in the export.
-        However, will not touch any albums that aren't
-        included in the export.
+        albums directory in the backup dir. Will fully sync
+        albums included in an export, removing any photos
+        within that album that were removed in the export,
+        but will not touch any albums that aren't included
+        in an export. Limited to albums specified on the
+        command line, or all albums if none are specified.
 
 How this works:
 - Uses rclone with a 'drive' remote, the same remote used for the

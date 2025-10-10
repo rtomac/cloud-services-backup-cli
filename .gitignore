@@ -1,5 +1,6 @@
 .DS_Store
 /.vscode/
+/.devenv/
 .pytest_cache/
 __pycache__/
 *.egg-info/

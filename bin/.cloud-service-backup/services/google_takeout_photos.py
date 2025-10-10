@@ -99,6 +99,9 @@ OAuth2 authentication:
         print(f"Writing manifest for album '{source_album_dir.name}'...")
         self.__write_album_manifest(dest_album_dir)
 
+        print(f"Synchronizing photos in '{source_album_dir.name}' to library folders...")
+        self.__sync_to_library(subcommand, dest_album_dir)
+
     def __sync_media(self, rsync_flags: list[str], source_album_dir: Path, dest_album_dir: Path) -> None:
         rsync(*rsync_flags, "--exclude", "*.txt", "--exclude", "*.json", f"{source_album_dir}/", f"{dest_album_dir}/")
 
@@ -136,10 +139,9 @@ OAuth2 authentication:
 
         # Read existing manifest
         if manifest_file.exists():
-            with open(manifest_file, "r") as file:
-                for line in file:
-                    (year, month, file_name) = line.strip().split("/")
-                    manifest_existing[file_name.lower()] = line.strip()
+            manifest = self.__read_manifest_file(manifest_file)
+            for year, month, file_name in manifest:
+                manifest_existing[file_name.lower()] = f"{year}/{month}/{file_name}"
 
         # Add new files
         for file in list_files(dest_album_dir):
@@ -161,6 +163,45 @@ OAuth2 authentication:
             with open(manifest_file, "w") as file:
                 for line in manifest_lines:
                     file.write(line + "\n")
-            print(f"Wrote updated manifest with {len(manifest_lines)} total line(s), {len(manifest_lines) - len(manifest_existing)} new line(s)")
+            print(f"Wrote updated manifest with {len(manifest_lines)} total line(s), {manifest_updates} updates(s)")
         else:
             print(f"Manifest already up to date with {len(manifest_lines)} line(s)")
+
+    def __read_manifest_file(self, manifest_file: Path) -> tuple[str, str, str]:
+        manifest = []
+        with open(manifest_file, "r") as file:
+            for line in file:
+                (year, month, file_name) = line.strip().split("/")
+                manifest.append((year, month, file_name))
+        return manifest
+
+
+    def __sync_to_library(self, subcommand: str, album_dir: Path) -> None:
+        manifest_file = album_dir.joinpath("manifest.txt")
+        for (year, month, file_name) in self.__read_manifest_file(manifest_file):
+            album_file = album_dir.joinpath(file_name)
+            library_file = self.user_backupd_library.joinpath(year, month, file_name)
+            
+            if self.__sync_file_to_library(subcommand, album_file, library_file):
+                print(f"Linked '{year}/{month}/{file_name}'")
+            
+            for ext in [".json", ".meta.json"]:
+                meta_file = album_dir.joinpath(file_name + ext)
+                if meta_file.exists():
+                    library_meta_file = self.user_backupd_library.joinpath(year, month, file_name + ext)
+                    if self.__sync_file_to_library(subcommand, meta_file, library_meta_file):
+                        print(f"Linked '{year}/{month}/{file_name + ext}'")
+
+    def __sync_file_to_library(self, subcommand: str, album_file: Path, library_file: Path) -> bool:
+        if not library_file.exists():
+            library_file.parent.mkdir(parents=True, exist_ok=True)
+            library_file.hardlink_to(album_file)
+            return True
+        elif subcommand == "sync":
+            album_stat = album_file.stat()
+            library_stat = library_file.stat()
+            if album_stat.st_size != library_stat.st_size or album_stat.st_mtime > library_stat.st_mtime:
+                library_file.unlink()
+                library_file.hardlink_to(album_file)
+                return True
+        return False

@@ -30,6 +30,37 @@ Subcommands:
         However, will not touch any albums that aren't
         included in the export.
 
+How this works:
+- Uses rclone with a 'drive' remote, the same remote used for the
+  'google-drive' service. Downloads archive files (only) from
+  the 'Takeout' folder in Google Drive into a local 'archives' folder.
+  In 'sync' mode, will also delete any local archive files that were
+  removed from Google Drive.
+- Detects which archive files belong to the same export and extracts
+  them into "joined" export folders in the 'archives' folder.
+- Will clean up any export folders that no longer have corresponding
+  archive files.
+- Scans all export folders for Google Photos albums and syncs them
+  into the 'albums' folder in the backup dir. Will only sync the 
+  latest export it can find *for each album*.
+- Syncs media files and JSON metadata files. In 'copy' mode, will
+  never overwrite existing files. In 'sync' mode, will overwrite
+  files where the modification time is newer than the existing file
+  and will delete files that were removed in the export for that
+  album. Albums that aren't included in the export are not touched.
+- Generates a manifest.txt file in each album folder that lists
+  all media files in the album, organized by year/month.
+- Add note on exif
+- Then, syncs media files and JSON metadata files from the album
+  to the 'library' folder by date and month, as specified in the
+  manifest file, using hard links to avoid using additional
+  disk space. The library folder is ultimately meant to be the
+  permanent archive/backup of all photos.
+- In 'copy' mode, will never overwrite existing hard links. In
+  'sync' mode, will overwrite hard links where the modification
+  time is newer than the existing hard link and/or the file size
+  is different.
+
 OAuth2 authentication:
   If you are providing your own Google OAuth2 client (via environment
   variables), you will need to ensure the correct APIs and OAuth2 scopes

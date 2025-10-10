@@ -43,10 +43,10 @@ Subcommands:
         included in the export.
 
 How this works:
-- Use rclone with a 'drive' remote, the same remote used for the
+- Uses rclone with a 'drive' remote, the same remote used for the
   'google-drive' service. Downloads archive files (only) from
   the 'Takeout' folder in Google Drive into a local 'archives' folder.
-  If 'sync', will also delete any local archive files that were
+  In 'sync' mode, will also delete any local archive files that were
   removed from Google Drive.
 - Detects which archive files belong to the same export and extracts
   them into "joined" export folders in the 'archives' folder.
@@ -57,7 +57,7 @@ How this works:
   that aren't included in the export are not touched.
 - Will only overwrite files where the modification time is newer
   than the existing file in the backup folder.
-- If 'sync', will delete files in the backup folder that were
+- In 'sync' mode, will delete files in the backup folder that were
   removed in the export, but only for product folders that are
   included in the export.
 

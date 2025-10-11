@@ -202,12 +202,12 @@ OAuth2 authentication:
         dest_dir = dest_root_dir.joinpath(relative_dir)
         dest_dir.mkdir(parents=True, exist_ok=True)
 
-        rsync_flags = ["--archive", "--update", "-v"]
+        rsync_flags = ["--archive", "--update"]
         if subcommand == "sync":
             rsync_flags.append("--delete")
         
         print(f"Synchronizing files in '{relative_dir}'...")
-        rsync(*rsync_flags, f"{source_dir}/", f"{dest_dir}/")
+        rsync(*rsync_flags, "-v", f"{source_dir}/", f"{dest_dir}/")
 
 
 @dataclass

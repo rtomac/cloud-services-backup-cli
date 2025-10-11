@@ -123,7 +123,7 @@ OAuth2 authentication:
     def __sync_album(self, subcommand: str, source_album_dir: Path, dest_album_dir: Path) -> None:
         dest_album_dir.mkdir(parents=True, exist_ok=True)
 
-        rsync_flags = ["--archive", "-v"]
+        rsync_flags = ["--archive"]
         if subcommand == "copy":
             rsync_flags += ["--ignore-existing"]
         elif subcommand == "sync":
@@ -142,7 +142,7 @@ OAuth2 authentication:
         self.__sync_to_library(subcommand, dest_album_dir)
 
     def __sync_media(self, rsync_flags: list[str], source_album_dir: Path, dest_album_dir: Path) -> None:
-        rsync(*rsync_flags, "--exclude", "*.txt", "--exclude", "*.json", f"{source_album_dir}/", f"{dest_album_dir}/")
+        rsync(*rsync_flags, "-v", "--exclude", "*.txt", "--exclude", "*.json", f"{source_album_dir}/", f"{dest_album_dir}/")
 
     def __sync_metadata(self, rsync_flags: list[str], source_album_dir: Path, dest_album_dir: Path) -> None:
         # Sync json metadata files separately here, so we can handle absurdly named
@@ -168,7 +168,7 @@ OAuth2 authentication:
                     dest_file_name = rename_suppl_meta_file(json_file)
                 os.link(json_file, tmp_dir.joinpath(dest_file_name))
             
-            rsync(*rsync_flags, "--include", "*.json", "--exclude", "*", f"{tmp_dir}/", f"{dest_album_dir}/")
+            rsync(*rsync_flags, "-v", "--include", "*.json", "--exclude", "*", f"{tmp_dir}/", f"{dest_album_dir}/")
 
     def __write_album_manifest(self, dest_album_dir: Path) -> None:
         manifest_file = dest_album_dir.joinpath("manifest.txt")

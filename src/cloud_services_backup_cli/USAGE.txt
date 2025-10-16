@@ -7,12 +7,13 @@ Usage:
 
 Services:
   gmail
-  google-calendar
-  google-contacts
   google-drive
+  google-contacts
+  google-calendar
+  dropbox
   google-photos
   google-takeout
-  dropbox
+  google-takeout-photos
   github
   bitbucket
 

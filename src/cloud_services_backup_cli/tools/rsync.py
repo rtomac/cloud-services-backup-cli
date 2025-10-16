@@ -1,0 +1,14 @@
+import subprocess
+from subprocess import CompletedProcess
+
+from ..lib import *
+from . import shell
+
+
+def rsync(*args: str) -> CompletedProcess:
+    return __rsync_run(args, check=True)
+
+def __rsync_run(args: list[str], **kwargs) -> CompletedProcess:
+    cmd = ["rsync", *shell.stringify_args(args)]
+    log_command(cmd)
+    return subprocess.run(cmd, **kwargs)

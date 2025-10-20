@@ -47,8 +47,7 @@ How this works:
 - Uses rclone with a 'drive' remote, the same remote used for the
   'google-drive' service. Downloads archive files (only) from
   the 'Takeout' folder in Google Drive into a local 'archives' folder.
-  In 'sync' mode, will also delete any local archive files that were
-  removed from Google Drive.
+  Will delete any local archive files that were removed from Google Drive.
 - Detects which archive files belong to the same export and extracts
   them into "joined" export folders in the 'archives' folder.
 - Will clean up any export folders that no longer have corresponding
@@ -117,9 +116,9 @@ OAuth2 authentication:
         return list_subdirs(self.user_backupd_archives)
 
     def sync_archives_from_remote(self, subcommand: str) -> None:
-        print(f"Starting rclone {subcommand} to download/sync archives...")
+        print(f"Starting rclone sync to download/sync archives...")
         rclone(
-            subcommand,
+            "sync",
             "--stats-log-level", "NOTICE",
             "--stats", "1m",
             "--include", "*.tgz", "--include", "*.zip",

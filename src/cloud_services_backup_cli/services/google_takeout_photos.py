@@ -235,15 +235,33 @@ OAuth2 authentication:
                         print(f"Linked '{year}/{month}/{file_name + ext}'")
 
     def __sync_file_to_library(self, subcommand: str, album_file: Path, library_file: Path) -> bool:
+        # If library file doesn't exist, create as hard link
         if not library_file.exists():
             library_file.parent.mkdir(parents=True, exist_ok=True)
             library_file.hardlink_to(album_file)
             return True
-        elif subcommand == "sync":
-            album_stat = album_file.stat()
-            library_stat = library_file.stat()
-            if album_stat.st_size != library_stat.st_size or album_stat.st_mtime > library_stat.st_mtime:
-                library_file.unlink()
-                library_file.hardlink_to(album_file)
-                return True
+        
+        album_stat = album_file.stat()
+        library_stat = library_file.stat()
+        
+        # If files already hard linked, we're done
+        is_hard_linked = (album_stat.st_ino == library_stat.st_ino and album_stat.st_dev == library_stat.st_dev)
+        if is_hard_linked:
+            return False
+        
+        # If files appear identical, replace the album file with a hard link to the library file,
+        # should help us avoid dup storage across *different albums*
+        are_same_size = (album_stat.st_size == library_stat.st_size)
+        if are_same_size:
+            album_file.unlink()
+            album_file.hardlink_to(library_file)
+            return True
+
+        # Files both exist but are different, if in sync mode,
+        # replace the library file only if album file is newer
+        if subcommand == "sync" and (album_stat.st_mtime > library_stat.st_mtime):
+            library_file.unlink()
+            library_file.hardlink_to(album_file)
+            return True
+        
         return False

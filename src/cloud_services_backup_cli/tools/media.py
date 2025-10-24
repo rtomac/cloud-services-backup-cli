@@ -50,7 +50,7 @@ class MediaFileInfo():
         if self.file_ext in IMAGE_EXTS:
             value = self.__read_exif_tag(*EXIF_CREATE_DATE_TAGS)
             if value:
-                return dateutil.parser.parse(value)
+                return self.__parse_exif_date_str(value)
 
         # If video, parse from video container metadata
         if self.file_ext in VIDEO_EXTS:
@@ -58,7 +58,7 @@ class MediaFileInfo():
             if value:
                 if isinstance(value, datetime):
                     return value
-                return dateutil.parser.parse(str(value))
+                return self.__parse_exif_date_str(str(value))
 
         # If media has metadata json file, see if we can read
         # a timestamp from there
@@ -75,7 +75,7 @@ class MediaFileInfo():
         # else, super reliable but slower
         value = self.__read_exif_tag_w_exiftool(*EXIF_CREATE_DATE_TAGS_PLUS)
         if value:
-            return dateutil.parser.parse(value)
+            return self.__parse_exif_date_str(value)
 
         raise ValueError(f"No create timestamp found for file {self.file_path}")
 
@@ -148,3 +148,8 @@ class MediaFileInfo():
         for field in tag_names:
             if field in tags:
                 return str(tags[field])
+
+
+    def __parse_exif_date_str(self, date_str: str) -> datetime:
+        date_str = re.sub(r'^(\d{4}):(\d{2}):(\d{2})(?=\s|T|$)', r'\1-\2-\3', date_str)
+        return dateutil.parser.parse(date_str)

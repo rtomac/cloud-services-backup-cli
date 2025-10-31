@@ -10,11 +10,13 @@ from pathlib import Path
 from ..lib import *
 from ..tools.rclone import *
 from ..tools.rsync import *
-from .google_drive import GoogleDrive
+
+
+CLEANUP_REMOTE_AGE_DAYS = 7
 
 
 @register_service("google-takeout")
-class GoogleTakeout(Service):
+class GoogleTakeout(RcloneService):
     """
 Backs up files from Google Takeout archives that are
 created and saved into Google Drive (one of the options
@@ -44,8 +46,7 @@ Subcommands:
         included in the export.
 
 How this works:
-- Uses rclone with a 'drive' remote, the same remote used for the
-  'google-drive' service. Downloads archive files (only) from
+- Uses rclone with a 'drive' remote. Downloads archive files (only) from
   the 'Takeout' folder in Google Drive into a local 'archives' folder.
   Will delete any local archive files that were removed from Google Drive.
 - Detects which archive files belong to the same export and extracts
@@ -60,6 +61,8 @@ How this works:
 - In 'sync' mode, will delete files in the backup folder that were
   removed in the export, but only for product folders that are
   included in the export.
+- Will remove archive files in Google Drive that have been successfully
+  processed and are older than 7 days.
 
 OAuth2 authentication:
   If you are providing your own Google OAuth2 client (via environment
@@ -71,29 +74,20 @@ OAuth2 authentication:
 
     def __init__(self, username: str):
         super().__init__(
+            "google_takeout",
             require_username(username, "google_username", "gmail.com"))
 
-        user_slug = slugify(self.username)
-        self.google_drive = GoogleDrive(self.username)
-        self.rclone_remote = self.google_drive.rclone_remote
-        self.user_backupd = backup_datad("google_takeout", user_slug)
         self.user_backupd_archives = self.user_backupd.joinpath("archives")
         self.user_backupd_files = self.user_backupd.joinpath("takeout")
 
-        self.user_backupd.mkdir(parents=True, exist_ok=True)
         self.user_backupd_archives.mkdir(parents=True, exist_ok=True)
         self.user_backupd_files.mkdir(parents=True, exist_ok=True)
 
+
     def info(self) -> None:
         print(f"Using rclone remote '{self.rclone_remote}' with config at {rclone_config()}")
-        print(f"Backing up to {self.user_backupd}")
-
-    def setup(self, *args: str) -> None:
-        self.google_drive.setup()
-
-    def setup_required(self) -> bool:
-        return self.google_drive.setup_required()
-
+        print(f"Using takeout archives in {self.user_backupd_archives}")
+        print(f"Backing up to {self.user_backupd_files}")
 
     def list_exports(self) -> list[GoogleTakeoutExport]:
         exports = {}
@@ -121,7 +115,7 @@ OAuth2 authentication:
             "sync",
             "--stats-log-level", "NOTICE",
             "--stats", "1m",
-            "--include", "*.tgz", "--include", "*.zip",
+            "--include", "takeout-*.tgz", "--include", "takeout-*.zip",
             f"{self.rclone_remote}:/Takeout/",
             f"{self.user_backupd_archives}/",
         )
@@ -136,13 +130,29 @@ OAuth2 authentication:
         
         self.__cleanup_extract_dirs()
 
+    def cleanup_archives_from_remote(self) -> None:
+        print(f"Deleting archive files older than {CLEANUP_REMOTE_AGE_DAYS} day(s) from Google Drive using rclone...")
+        rclone(
+            "delete",
+            "--stats-log-level", "NOTICE",
+            "--stats", "1m",
+            "--include", "takeout-*.tgz", "--include", "takeout-*.zip",
+            "--min-age", f"{CLEANUP_REMOTE_AGE_DAYS}d",
+            f"{self.rclone_remote}:/Takeout/"
+        )
+
+
+    def _create_remote_silent(self) -> None:
+        rclone_create_remote_silent(
+            self.rclone_remote, "drive",
+            "scope", "drive",
+            *google_oauth_creds_as_args(client_id_key="client_id", client_secret_key="client_secret"))
 
     def _backup(self, subcommand: str, *args: str) -> None:
         self.sync_archives_from_remote(subcommand)
         self.extract_archives(subcommand)
-
-        print("Backing up takeout files...")
         self.__sync_exports_to_backup(subcommand)
+        self.cleanup_archives_from_remote()
 
 
     def __extract_archives_for_export(self, export: GoogleTakeoutExport) -> None:
@@ -181,6 +191,7 @@ OAuth2 authentication:
 
 
     def __sync_exports_to_backup(self, subcommand: str) -> None:
+        print("Backing up takeout files...")
         for export in self.list_exports():
             source_root_dir = export.takeout_root_dir()
             if not source_root_dir.exists() or not source_root_dir.is_dir(): continue
@@ -245,6 +256,7 @@ class GoogleTakeoutAddonService(Service):
         self.google_takeout.sync_archives_from_remote(subcommand)
         self.google_takeout.extract_archives(subcommand)
         self._backup_takeout_files(subcommand, *args)
+        self.google_takeout.cleanup_archives_from_remote()
 
     @abstractmethod
     def _backup_takeout_files(self, subcommand: str, *args: str) -> None:

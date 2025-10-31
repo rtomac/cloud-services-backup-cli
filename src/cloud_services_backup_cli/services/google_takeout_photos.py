@@ -35,15 +35,9 @@ Subcommands:
         command line, or all albums if none are specified.
 
 How this works:
-- Uses rclone with a 'drive' remote, the same remote used for the
-  'google-drive' service. Downloads archive files (only) from
-  the 'Takeout' folder in Google Drive into a local 'archives' folder.
-  In 'sync' mode, will also delete any local archive files that were
-  removed from Google Drive.
-- Detects which archive files belong to the same export and extracts
-  them into "joined" export folders in the 'archives' folder.
-- Will clean up any export folders that no longer have corresponding
-  archive files.
+- Downloads, extracts, and manages Google Takeout archives just
+  as described in the 'google-takeout' service (see help).
+  After that...
 - Scans all export folders for Google Photos albums and syncs them
   into the 'albums' folder in the backup dir. Will only sync the 
   latest export it can find *for each album*.

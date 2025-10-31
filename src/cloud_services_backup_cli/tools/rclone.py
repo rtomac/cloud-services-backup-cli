@@ -77,8 +77,8 @@ class RcloneService(Service):
         super().__init__(require_username(username))
         
         user_slug = slugify(self.username)
-        self.user_backupd = backup_datad(app_slug, user_slug)
         self.rclone_remote = rclone_remote_name(app_slug, user_slug)
+        self.user_backupd = backup_datad(app_slug, user_slug)
 
         self.user_backupd.mkdir(parents=True, exist_ok=True)
 

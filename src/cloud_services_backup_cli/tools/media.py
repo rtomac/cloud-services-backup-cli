@@ -5,6 +5,7 @@ from pathlib import Path
 import re
 from datetime import datetime
 import dateutil
+import logging
 
 from PIL import Image
 from pillow_heif import register_heif_opener
@@ -46,35 +47,45 @@ class MediaFileInfo():
         self.file_ext = self.file_path.suffix.lower()
 
     def get_create_timestamp(self) -> datetime | None:
+        logging.debug(f"Getting create timestamp for media file: {self.file_path}")
+
         # If image, parse from exif tags
         if self.file_ext in IMAGE_EXTS:
             value = self.__read_exif_tag(*EXIF_CREATE_DATE_TAGS)
             if value:
+                logging.debug(f"Value from image exif tags: {value}")
                 return self.__parse_exif_date_str(value)
 
         # If video, parse from video container metadata
         if self.file_ext in VIDEO_EXTS:
             value = self.__read_video_metadata_field("creation_date", "date")
             if value:
-                if isinstance(value, datetime):
-                    return value
-                return self.__parse_exif_date_str(str(value))
+                logging.debug(f"Value from video metadata: {value}")
+                if not isinstance(value, datetime):
+                    value = dateutil.parser.parse(str(value))
+                if value.year < 1970:
+                    value = value.replace(year=value.year + 66)
+                    logging.debug(f"Adjusted value after mac epoch fix: {value}")
+                return value
 
         # If media has metadata json file, see if we can read
         # a timestamp from there
         value = self.__read_timestamp_from_json_metadata("photoTakenTime", "creationTime")
         if value:
+            logging.debug(f"Value from json metadata: {value}")
             return value
 
         # Try parsing timestamp from file name
         value = self.__read_timestamp_from_file_name()
         if value:
+            logging.debug(f"Value from file name: {value}")
             return value
 
         # Fallback to shelling out to exiftool for everything
         # else, super reliable but slower
         value = self.__read_exif_tag_w_exiftool(*EXIF_CREATE_DATE_TAGS_PLUS)
         if value:
+            logging.debug(f"Value from exiftool: {value}")
             return self.__parse_exif_date_str(value)
 
         raise ValueError(f"No create timestamp found for file {self.file_path}")

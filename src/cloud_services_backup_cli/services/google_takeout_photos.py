@@ -1,4 +1,5 @@
 from pathlib import Path
+import re
 import tempfile
 
 from ..lib import *
@@ -132,34 +133,62 @@ OAuth2 authentication:
         print(f"Writing manifest for album '{source_album_dir.name}'...")
         self.__write_album_manifest(dest_album_dir)
 
-        print(f"Synchronizing photos in '{source_album_dir.name}' to library folders...")
+        print(f"Synchronizing files in '{source_album_dir.name}' to library folders...")
         self.__sync_to_library(subcommand, dest_album_dir)
 
     def __sync_media(self, rsync_flags: list[str], source_album_dir: Path, dest_album_dir: Path) -> None:
-        rsync(*rsync_flags, "-v", "--exclude", "*.txt", "--exclude", "*.json", f"{source_album_dir}/", f"{dest_album_dir}/")
+        # Include all files *with an extension* except .txt and .json
+        rsync(*rsync_flags, "-v",
+              "--exclude", "*.txt", "--exclude", "*.json", "--include", "*.*", "--exclude", "*",
+              f"{source_album_dir}/", f"{dest_album_dir}/")
 
     def __sync_metadata(self, rsync_flags: list[str], source_album_dir: Path, dest_album_dir: Path) -> None:
         # Sync json metadata files separately here, so we can handle absurdly named
-        # ".supplemental-metadata.json" files with suffixes that are 1) very long and
-        # 2) variably named based on the length of the media file name, which makes
-        # them difficult to check for on file system. We'll rename these ".meta.json".
+        # ".supplemental-metadata.json" files with suffixes that are
+        # 1) very long,
+        # 2) variably named based on the length of the media file name,
+        # 3) sometimes have number postfixes like "(1)" or "(2)"
+        # ...which makes them difficult to check for on file system.
+        # We'll rename these ".meta.json".
         # 
         # Use temp dir with hard-linked renamed files so we can ultimately 
         # just do an efficient rsync for these files as well.
+        SUPPL_META_MIDDLE_SUFFIX = ".supplemental-metadata"
 
-        def is_suppl_meta_file(f: Path) -> bool:
-            return len(f.suffixes) >= 3 and ".supplemental-metadata".startswith(f.suffixes[-2].lower())
-        
-        def rename_suppl_meta_file(f: Path) -> bool:
-            return f.with_suffix('').with_suffix('').name + ".meta.json"
+        def get_dest_file_names(json_file: Path) -> tuple[str, str]:
+            if len(json_file.suffixes) >= 3:
+                middle_suffix = json_file.suffixes[-2].lower()
+
+                # Jump through hoops here to deal with number postfixes
+                # that are on the end of the middle suffix instead of
+                # the file name stem
+                middle_suffix_number_postfix = re.search(r"\(\d+\)$", middle_suffix)
+                number_postfix = ""
+                if middle_suffix_number_postfix:
+                    middle_suffix = middle_suffix[:middle_suffix_number_postfix.start()]
+                    number_postfix = middle_suffix_number_postfix.group(0)
+
+                if SUPPL_META_MIDDLE_SUFFIX.startswith(middle_suffix):
+                    # Is supplemental metadata file
+                    media_file = json_file.with_suffix('').with_suffix('')
+                    media_file_name = media_file.name
+                    if number_postfix:
+                        media_file_name = media_file.stem + number_postfix + media_file.suffix
+                    return (media_file_name + ".meta.json", media_file_name)
+
+            # Just a regular old .json file
+            return (json_file.name, json_file.with_suffix('').name)
 
         with tempfile.TemporaryDirectory(dir=backup_tmpd()) as tmp_dir_path:
             tmp_dir = Path(tmp_dir_path)
+
             json_files = [f for f in list_files(source_album_dir) if f.suffix.lower() == ".json"]
+            media_file_names_lc = {f.name.lower() for f in list_files(source_album_dir) if f.suffix.lower() != ".json" }
+
             for json_file in json_files:
-                dest_file_name = json_file.name
-                if is_suppl_meta_file(json_file):
-                    dest_file_name = rename_suppl_meta_file(json_file)
+                (dest_file_name, media_file_name) = get_dest_file_names(json_file)
+                if not media_file_name.lower() in media_file_names_lc:
+                    continue
                 os.link(json_file, tmp_dir.joinpath(dest_file_name))
             
             rsync(*rsync_flags, "-v", "--include", "*.json", "--exclude", "*", f"{tmp_dir}/", f"{dest_album_dir}/")

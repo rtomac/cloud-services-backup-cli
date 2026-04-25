@@ -88,6 +88,10 @@ OAuth2 authentication:
 
 
     def __list_albums_to_sync(self, *args: str) -> list[(GoogleTakeoutExport, Path)]:
+        # Build a dict keyed by album name so that if the same album appears in
+        # multiple exports, the last export seen wins. Exports are iterated in
+        # chronological order (their names are timestamps), so this naturally
+        # selects the most recent export for each album.
         albums_dict = {}
 
         for export in self.google_takeout.list_exports():
@@ -100,6 +104,7 @@ OAuth2 authentication:
 
         albums_list = sorted(albums_dict.values(), key=lambda x: (x[0].name, x[1].name))
         if len(args):
+            # Filter to only the albums explicitly requested on the command line
             args_lower = set(a.lower().strip() for a in args)
             albums_list = [a for a in albums_list if a[1].name.lower().strip() in args_lower]
         [logging.debug(f"Will sync album '{source_album_dir.name}' from export '{export.name}'")
@@ -143,90 +148,175 @@ OAuth2 authentication:
               f"{source_album_dir}/", f"{dest_album_dir}/")
 
     def __sync_metadata(self, rsync_flags: list[str], source_album_dir: Path, dest_album_dir: Path) -> None:
-        # Sync json metadata files separately here, so we can handle absurdly named
-        # ".supplemental-metadata.json" files with suffixes that are
-        # 1) very long,
-        # 2) variably named based on the length of the media file name,
-        # 3) sometimes have number postfixes like "(1)" or "(2)"
-        # ...which makes them difficult to check for on file system.
-        # We'll rename these ".meta.json".
-        # 
-        # Use temp dir with hard-linked renamed files so we can ultimately 
-        # just do an efficient rsync for these files as well.
-        SUPPL_META_MIDDLE_SUFFIX = ".supplemental-metadata"
+        # Google Takeout exports a ".supplemental-metadata.json" sidecar file for each
+        # media file. These are awkward to handle for two reasons:
+        #
+        # 1) The filename is constructed by inserting ".supplemental-metadata" before
+        #    the final ".json", which makes the total filename very long. Google Takeout
+        #    truncates the result when it exceeds filesystem limits, starting from the
+        #    middle, which can leave anything from the full suffix to just a few chars.
+        #
+        # 2) Google Takeout uses two different base naming patterns before truncation:
+        #      photo.jpg.supplemental-metadata.json   (media extension included)
+        #      photo.supplemental-metadata.json       (media extension omitted)
+        #
+        # We rename all sidecar files to "<media_file>.meta.json" in the destination,
+        # which avoids the truncation problem entirely.
+        #
+        # To do the rename efficiently we hard-link the renamed files into a temp dir
+        # and rsync from there, rather than building a custom transfer loop.
+        SUPPL_META_SUFFIX = ".supplemental-metadata"
 
-        def get_dest_file_names(json_file: Path) -> tuple[str, str]:
-            if len(json_file.suffixes) >= 3:
-                middle_suffix = json_file.suffixes[-2].lower()
+        def get_meta_dest_name(
+            json_file: Path,
+            media_names_lc: dict[str, str],  # lowercase filename → original filename
+            media_stems_lc: dict[str, str],  # lowercase stem (no ext) → original filename
+        ) -> str | None:
+            """
+            Returns the destination filename for a JSON file, or None if the file
+            has no matching media file and should be skipped.
 
-                # Jump through hoops here to deal with number postfixes
-                # that are on the end of the middle suffix instead of
-                # the file name stem
-                middle_suffix_number_postfix = re.search(r"\(\d+\)$", middle_suffix)
-                number_postfix = ""
-                if middle_suffix_number_postfix:
-                    middle_suffix = middle_suffix[:middle_suffix_number_postfix.start()]
-                    number_postfix = middle_suffix_number_postfix.group(0)
+            Google Takeout names supplemental metadata files by inserting
+            ".supplemental-metadata" before the final ".json". When the resulting
+            filename is too long for the filesystem, Takeout truncates it from the
+            middle outward. This produces several possible shapes:
 
-                if SUPPL_META_MIDDLE_SUFFIX.startswith(middle_suffix):
-                    # Is supplemental metadata file
-                    media_file = json_file.with_suffix('').with_suffix('')
-                    media_file_name = media_file.name
-                    if number_postfix:
-                        media_file_name = media_file.stem + number_postfix + media_file.suffix
-                    return (media_file_name + ".meta.json", media_file_name)
+            Pattern A — media extension present, suffix intact (3+ suffixes):
+              photo.jpg.supplemental-metadata.json    → photo.jpg
 
-            # Just a regular old .json file
-            return (json_file.name, json_file.with_suffix('').name)
+            Pattern A — media extension present, suffix truncated (3+ suffixes):
+              photo.jpg.supplemental-metad.json       → photo.jpg
+              photo.jpg.s.json                        → photo.jpg
+
+            Pattern B — media extension omitted, suffix intact (2 suffixes):
+              photo.supplemental-metadata.json        → photo.jpg
+
+            Pattern B — media extension omitted, suffix truncated (2 suffixes):
+              photo.supplemental-metad.json           → photo.jpg
+
+            Fallback — truncation ate into the media extension itself (2 suffixes):
+              photo.j.json                            → photo.jpg
+
+            When the same photo appears in the export more than once (duplicates),
+            Takeout appends a number postfix to the *suffix* rather than the stem:
+              photo.jpg.supplemental-metadata(1).json → photo(1).jpg
+              photo.jpg.supplemental-metadata(2).json → photo(2).jpg
+              photo.supplemental-metadata(1).json     → photo(1).jpg
+
+            Regular (non-supplemental) JSON files are passed through with their
+            original filename, but only if a matching media file exists.
+            """
+            suffixes = json_file.suffixes
+            if len(suffixes) < 2:  # Not a supplemental metadata file, skip it
+                return None
+
+            # First suffix is always ".json", second suffix is the one we
+            # need to check for the supplemental metadata pattern.
+            second_suffix = suffixes[-2].lower()
+
+            # Extract number postfix if exists on second suffix, e.g.:
+            #   ".supplemental-metadata(1)" → second_suffix=".supplemental-metadata", number_postfix="(1)"
+            number_postfix = ""
+            number_postfix_match = re.search(r"\(\d+\)$", second_suffix)
+            if number_postfix_match:
+                second_suffix = second_suffix[:number_postfix_match.start()]
+                number_postfix = number_postfix_match.group(0)
+
+            # Strip the suffixes to expose the media file (or stem if no ext).
+            # "photo.jpg.supplemental-metadata.json" → photo.jpg   (pattern A)
+            # "photo.supplemental-metadata.json"     → photo        (pattern B)
+            media_base = json_file.with_suffix('').with_suffix('')
+
+            # Check if second suffix is a (possibly truncated) ".supplemental-metadata".
+            # startswith in this direction means truncated forms like ".supplemental-metad" still match.
+            if len(second_suffix) > 1 and SUPPL_META_SUFFIX.startswith(second_suffix):
+                if len(suffixes) >= 3:
+                    # Pattern A: media_base has an extension (photo.jpg).
+                    # Re-attach number postfix to stem: photo(1).jpg
+                    media_name = media_base.stem + number_postfix + media_base.suffix
+                    media_name_match = media_names_lc.get(media_name.lower())
+                else:
+                    # Pattern B: media_base is stem-only (photo).
+                    # Look up by stem + postfix: photo(1)
+                    media_name_match = media_stems_lc.get((media_base.name + number_postfix).lower())
+                return media_name_match + ".meta.json" if media_name_match else None
+
+            # Regular JSON: pass through unchanged if a matching media file exists.
+            if media_names_lc.get(json_file.with_suffix('').name.lower()):
+                return json_file.name
+
+            # Fallback: truncation ate into the media extension itself (e.g. "photo.j.json"
+            # from "photo.jpg.supplemental-metadata.json"). ".j" doesn't match
+            # ".supplemental-metadata" above, so we land here. Check if name-without-.json
+            # is a prefix of any media filename ("photo.j" is a prefix of "photo.jpg").
+            name_prefix = json_file.with_suffix('').name.lower()
+            for media_name_lc, media_name_orig in media_names_lc.items():
+                if media_name_lc.startswith(name_prefix):
+                    return media_name_orig + ".meta.json"
+
+            return None
 
         with tempfile.TemporaryDirectory(dir=backup_tmpd()) as tmp_dir_path:
             tmp_dir = Path(tmp_dir_path)
 
             json_files = [f for f in list_files(source_album_dir) if f.suffix.lower() == ".json"]
-            media_file_names_lc = {f.name.lower() for f in list_files(source_album_dir) if f.suffix.lower() != ".json" }
+            media_files = [f for f in list_files(source_album_dir) if f.suffix.lower() != ".json"]
+            media_names_lc = {f.name.lower(): f.name for f in media_files}  # for exact filename lookup
+            media_stems_lc = {f.stem.lower(): f.name for f in media_files}  # for stem-only lookup
 
             for json_file in json_files:
-                (dest_file_name, media_file_name) = get_dest_file_names(json_file)
-                if not media_file_name.lower() in media_file_names_lc:
+                dest_name = get_meta_dest_name(json_file, media_names_lc, media_stems_lc)
+                if dest_name is None:
                     continue
-                os.link(json_file, tmp_dir.joinpath(dest_file_name))
-            
+                os.link(json_file, tmp_dir.joinpath(dest_name))
+
             rsync(*rsync_flags, "-v", "--include", "*.json", "--exclude", "*", f"{tmp_dir}/", f"{dest_album_dir}/")
 
     def __write_album_manifest(self, dest_album_dir: Path) -> None:
+        # The manifest maps each media file to its year/month, one line per file:
+        #   2026/01/photo.jpg
+        #   2026/03/video.mp4
+        # This is used by __sync_to_library to place files into the library folder
+        # tree without having to re-read timestamps on every run.
+        #
+        # Determining the timestamp requires reading EXIF or video metadata, which
+        # is slow. To avoid doing it on every run, we load the existing manifest and
+        # re-use entries for files that are already present. Only files that are new
+        # since the last run need their timestamp extracted.
         manifest_file = dest_album_dir.joinpath("manifest.txt")
         manifest_new = []
         manifest_existing = {}
         manifest_updates = 0
 
-        # Read existing manifest
+        # Index the existing manifest by lowercase filename for fast lookup below
         if manifest_file.exists():
             manifest = self.__read_manifest_file(manifest_file)
             for year, month, file_name in manifest:
                 manifest_existing[file_name.lower()] = (year, month, file_name)
 
-        # Add new files
         for file in list_files(dest_album_dir):
             if file.suffix.lower() == ".txt" or file.suffix.lower() == ".json": continue
             if file.name.startswith("."): continue
 
+            # Re-use the existing entry if we already know this file's timestamp
             existing_line = manifest_existing.get(file.name.lower())
             if existing_line:
                 manifest_new.append(existing_line)
                 continue
 
+            # New file — extract the creation timestamp and add it to the manifest
             dt = MediaFileInfo(file).get_create_timestamp()
             manifest_new.append((dt.strftime("%Y"), dt.strftime("%m"), file.name))
             manifest_updates += 1
 
-        # Write updated manifest file
         if manifest_updates > 0:
             self.__write_manifest_file(manifest_file, manifest_new)
             print(f"Wrote updated manifest with {len(manifest_new)} total line(s), {manifest_updates} updates(s)")
         else:
             print(f"Manifest already up to date with {len(manifest_new)} line(s)")
 
-    def __read_manifest_file(self, manifest_file: Path) -> tuple[str, str, str]:
+    def __read_manifest_file(self, manifest_file: Path) -> list[tuple[str, str, str]]:
+        # Each line is "YYYY/MM/filename", e.g. "2026/01/photo.jpg"
         manifest = []
         with open(manifest_file, "r") as file:
             for line in file:
@@ -242,14 +332,20 @@ OAuth2 authentication:
 
 
     def __sync_to_library(self, subcommand: str, album_dir: Path) -> None:
+        # The library is a flat-ish folder tree organised by year/month:
+        #   library/2026/01/photo.jpg
+        # Files are hard-linked (not copied) from the album dir to avoid using
+        # extra disk space. The manifest tells us which year/month each file belongs to.
         manifest_file = album_dir.joinpath("manifest.txt")
         for (year, month, file_name) in self.__read_manifest_file(manifest_file):
             album_file = album_dir.joinpath(file_name)
             library_file = self.user_backupd_library.joinpath(year, month, file_name)
-            
+
             if self.__sync_file_to_library(subcommand, album_file, library_file):
                 print(f"Linked '{year}/{month}/{file_name}'")
-            
+
+            # Sync any sidecar metadata files alongside the media file.
+            # We check both .json (plain) and .meta.json (renamed supplemental metadata).
             for ext in [".json", ".meta.json"]:
                 meta_file = album_dir.joinpath(file_name + ext)
                 if meta_file.exists():
@@ -258,33 +354,34 @@ OAuth2 authentication:
                         print(f"Linked '{year}/{month}/{file_name + ext}'")
 
     def __sync_file_to_library(self, subcommand: str, album_file: Path, library_file: Path) -> bool:
-        # If library file doesn't exist, create as hard link
+        # Case 1: library file doesn't exist yet — create it as a hard link to the album file
         if not library_file.exists():
             library_file.parent.mkdir(parents=True, exist_ok=True)
             library_file.hardlink_to(album_file)
             return True
-        
+
         album_stat = album_file.stat()
         library_stat = library_file.stat()
-        
-        # If files already hard linked, we're done
+
+        # Case 2: already the same inode — files are already hard-linked, nothing to do
         is_hard_linked = (album_stat.st_ino == library_stat.st_ino and album_stat.st_dev == library_stat.st_dev)
         if is_hard_linked:
             return False
-        
-        # If files appear identical, replace the album file with a hard link to the library file,
-        # should help us avoid dup storage across *different albums*
+
+        # Case 3: different inodes but same size — treat as the same photo (e.g. it
+        # appears in multiple albums). Replace the album copy with a hard link to the
+        # library copy so both point at a single inode and we don't store it twice.
         are_same_size = (album_stat.st_size == library_stat.st_size)
         if are_same_size:
             album_file.unlink()
             album_file.hardlink_to(library_file)
             return True
 
-        # Files both exist but are different, if in sync mode,
-        # replace the library file only if album file is newer
+        # Case 4: files differ (e.g. the export contains an updated version of the photo).
+        # In sync mode, replace the library file with the newer album file.
         if subcommand == "sync" and (album_stat.st_mtime > library_stat.st_mtime):
             library_file.unlink()
             library_file.hardlink_to(album_file)
             return True
-        
+
         return False

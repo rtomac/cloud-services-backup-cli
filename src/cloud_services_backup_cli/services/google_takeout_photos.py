@@ -1,8 +1,9 @@
+import json
 from pathlib import Path
-import re
 import tempfile
 
 from ..lib import *
+from ..lib.takeout_photo_matching import plan_filename_matches, resolve_by_title
 from ..tools.rsync import *
 from ..tools.media import *
 from .google_takeout import *
@@ -148,129 +149,53 @@ OAuth2 authentication:
               f"{source_album_dir}/", f"{dest_album_dir}/")
 
     def __sync_metadata(self, rsync_flags: list[str], source_album_dir: Path, dest_album_dir: Path) -> None:
-        # Google Takeout exports a ".supplemental-metadata.json" sidecar file for each
-        # media file. These are awkward to handle for two reasons:
-        #
-        # 1) The filename is constructed by inserting ".supplemental-metadata" before
-        #    the final ".json", which makes the total filename very long. Google Takeout
-        #    truncates the result when it exceeds filesystem limits, starting from the
-        #    middle, which can leave anything from the full suffix to just a few chars.
-        #
-        # 2) Google Takeout uses two different base naming patterns before truncation:
-        #      photo.jpg.supplemental-metadata.json   (media extension included)
-        #      photo.supplemental-metadata.json       (media extension omitted)
-        #
-        # We rename all sidecar files to "<media_file>.meta.json" in the destination,
-        # which avoids the truncation problem entirely.
-        #
-        # To do the rename efficiently we hard-link the renamed files into a temp dir
-        # and rsync from there, rather than building a custom transfer loop.
-        SUPPL_META_SUFFIX = ".supplemental-metadata"
-
-        def get_meta_dest_name(
-            json_file: Path,
-            media_names_lc: dict[str, str],  # lowercase filename → original filename
-            media_stems_lc: dict[str, str],  # lowercase stem (no ext) → original filename
-        ) -> str | None:
-            """
-            Returns the destination filename for a JSON file, or None if the file
-            has no matching media file and should be skipped.
-
-            Google Takeout names supplemental metadata files by inserting
-            ".supplemental-metadata" before the final ".json". When the resulting
-            filename is too long for the filesystem, Takeout truncates it from the
-            middle outward. This produces several possible shapes:
-
-            Pattern A — media extension present, suffix intact (3+ suffixes):
-              photo.jpg.supplemental-metadata.json    → photo.jpg
-
-            Pattern A — media extension present, suffix truncated (3+ suffixes):
-              photo.jpg.supplemental-metad.json       → photo.jpg
-              photo.jpg.s.json                        → photo.jpg
-
-            Pattern B — media extension omitted, suffix intact (2 suffixes):
-              photo.supplemental-metadata.json        → photo.jpg
-
-            Pattern B — media extension omitted, suffix truncated (2 suffixes):
-              photo.supplemental-metad.json           → photo.jpg
-
-            Fallback — truncation ate into the media extension itself (2 suffixes):
-              photo.j.json                            → photo.jpg
-
-            When the same photo appears in the export more than once (duplicates),
-            Takeout appends a number postfix to the *suffix* rather than the stem:
-              photo.jpg.supplemental-metadata(1).json → photo(1).jpg
-              photo.jpg.supplemental-metadata(2).json → photo(2).jpg
-              photo.supplemental-metadata(1).json     → photo(1).jpg
-
-            Regular (non-supplemental) JSON files are passed through with their
-            original filename, but only if a matching media file exists.
-            """
-            suffixes = json_file.suffixes
-            if len(suffixes) < 2:  # Not a supplemental metadata file, skip it
-                return None
-
-            # First suffix is always ".json", second suffix is the one we
-            # need to check for the supplemental metadata pattern.
-            second_suffix = suffixes[-2].lower()
-
-            # Extract number postfix if exists on second suffix, e.g.:
-            #   ".supplemental-metadata(1)" → second_suffix=".supplemental-metadata", number_postfix="(1)"
-            number_postfix = ""
-            number_postfix_match = re.search(r"\(\d+\)$", second_suffix)
-            if number_postfix_match:
-                second_suffix = second_suffix[:number_postfix_match.start()]
-                number_postfix = number_postfix_match.group(0)
-
-            # Strip the suffixes to expose the media file (or stem if no ext).
-            # "photo.jpg.supplemental-metadata.json" → photo.jpg   (pattern A)
-            # "photo.supplemental-metadata.json"     → photo        (pattern B)
-            media_base = json_file.with_suffix('').with_suffix('')
-
-            # Check if second suffix is a (possibly truncated) ".supplemental-metadata".
-            # startswith in this direction means truncated forms like ".supplemental-metad" still match.
-            if len(second_suffix) > 1 and SUPPL_META_SUFFIX.startswith(second_suffix):
-                if len(suffixes) >= 3:
-                    # Pattern A: media_base has an extension (photo.jpg).
-                    # Re-attach number postfix to stem: photo(1).jpg
-                    media_name = media_base.stem + number_postfix + media_base.suffix
-                    media_name_match = media_names_lc.get(media_name.lower())
-                else:
-                    # Pattern B: media_base is stem-only (photo).
-                    # Look up by stem + postfix: photo(1)
-                    media_name_match = media_stems_lc.get((media_base.name + number_postfix).lower())
-                return media_name_match + ".meta.json" if media_name_match else None
-
-            # Regular JSON: pass through unchanged if a matching media file exists.
-            if media_names_lc.get(json_file.with_suffix('').name.lower()):
-                return json_file.name
-
-            # Fallback: truncation ate into the media extension itself (e.g. "photo.j.json"
-            # from "photo.jpg.supplemental-metadata.json"). ".j" doesn't match
-            # ".supplemental-metadata" above, so we land here. Check if name-without-.json
-            # is a prefix of any media filename ("photo.j" is a prefix of "photo.jpg").
-            name_prefix = json_file.with_suffix('').name.lower()
-            for media_name_lc, media_name_orig in media_names_lc.items():
-                if media_name_lc.startswith(name_prefix):
-                    return media_name_orig + ".meta.json"
-
-            return None
-
+        # Google Takeout writes a "<media>.supplemental-metadata.json" sidecar for
+        # each media file, but truncates over-long names from the middle — and
+        # truncates the media filename independently — so the two names on disk are
+        # lossy derivations of the same original and can't always be matched to each
+        # other directly. We associate them with a two-tier matcher (see
+        # lib/takeout_photo_matching.py): a cheap filename pass that resolves ~99% of
+        # sidecars with no file reads, then a title-based pass that reads the "title"
+        # field only for the ambiguous remainder. Each sidecar is then hard-linked
+        # into a temp dir as "<media_file>.meta.json" and rsynced to the destination,
+        # which sidesteps the truncated names entirely downstream.
         with tempfile.TemporaryDirectory(dir=backup_tmpd()) as tmp_dir_path:
             tmp_dir = Path(tmp_dir_path)
 
             json_files = [f for f in list_files(source_album_dir) if f.suffix.lower() == ".json"]
             media_files = [f for f in list_files(source_album_dir) if f.suffix.lower() != ".json"]
-            media_names_lc = {f.name.lower(): f.name for f in media_files}  # for exact filename lookup
-            media_stems_lc = {f.stem.lower(): f.name for f in media_files}  # for stem-only lookup
+            json_by_name = {f.name: f for f in json_files}
+            media_names = [f.name for f in media_files]
 
-            for json_file in json_files:
-                dest_name = get_meta_dest_name(json_file, media_names_lc, media_stems_lc)
-                if dest_name is None:
-                    continue
-                os.link(json_file, tmp_dir.joinpath(dest_name))
+            # Pass 1: match by filename only, no reads.
+            resolved, deferred = plan_filename_matches(list(json_by_name.keys()), media_names)
+
+            # Pass 2: for the ambiguous remainder, read each sidecar's "title" field
+            # (the authoritative original filename) and match on that.
+            if deferred:
+                titles = {name: self.__read_json_title(json_by_name[name]) for name in deferred}
+                claimed = set(resolved.values())
+                unmatched_media = [n for n in media_names if n not in claimed]
+                resolved.update(resolve_by_title(deferred, titles, unmatched_media))
+
+            print(f"Matched {len(resolved)} of {len(json_files)} metadata file(s) "
+                  f"({len(deferred)} needed a title read)")
+
+            for json_name, media_name in resolved.items():
+                os.link(json_by_name[json_name], tmp_dir.joinpath(media_name + ".meta.json"))
 
             rsync(*rsync_flags, "-v", "--include", "*.json", "--exclude", "*", f"{tmp_dir}/", f"{dest_album_dir}/")
+
+    def __read_json_title(self, json_file: Path) -> str | None:
+        # The sidecar's "title" is the full, untruncated original filename (with the
+        # correct extension) — the reliable key for matching when the on-disk names
+        # are mangled. Returns None if the file can't be read or parsed.
+        try:
+            with open(json_file, "r") as f:
+                return json.load(f).get("title")
+        except (OSError, ValueError) as e:
+            logging.warning(f"Could not read title from {json_file.name}: {e}")
+            return None
 
     def __write_album_manifest(self, dest_album_dir: Path) -> None:
         # The manifest maps each media file to its year/month, one line per file:

@@ -16,6 +16,7 @@ dependencies = [
     "pillow_heif==1.1.*",
     "piexif==1.1.*",
     "hachoir==3.3.*",
+    "vdirsyncer[google]==0.20.*",
 ]
 
 [tool.setuptools.packages.find]

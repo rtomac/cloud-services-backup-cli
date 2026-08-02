@@ -1,58 +1,31 @@
-from ..lib import *
-from ..tools.gcardvault import *
+from ..lib import register_service
+from ..tools.vdirsyncer import VDirSyncerService
 
 
 @register_service("google-contacts")
-class GoogleContacts(Service):
+class GoogleContacts(VDirSyncerService):
     """
-Backs up a user's Google Contacts using gcardvault in *.vcf format.
+Backs up a user's Google Contacts using vdirsyncer via CardDAV.
+
+Contacts are synced into a subdirectory under the backup path,
+with one .vcf file per contact.
 
 Subcommands:
   setup <google_username>
         Runs an auth flow with Google to create an access token.
   copy <google_username>
-        Runs a 'gcardvault sync' that will update existing contacts
-        but not delete contacts locally that have been deleted remotely.
+        Syncs contacts to a staging directory, then rsyncs to the backup
+        directory without --delete, so locally-deleted contacts are preserved.
   sync <google_username>
-        Runs a 'gcardvault sync' with '--clean' flag that will update existing
-        contacts and delete contacts locally that have been deleted remotely.
+        Syncs contacts directly to the backup directory, including deletions
+        for contacts that have been removed remotely.
 
 OAuth2 authentication:
   If you are providing your own Google OAuth2 client (via environment
   variables), you will need to ensure the correct APIs and OAuth2 scopes
   are enabled. See:
-  https://github.com/rtomac/gcardvault/blob/main/README.md#oauth2-authentication
+  https://vdirsyncer.pimutils.org/en/stable/supported.html#google
     """
 
     def __init__(self, username: str):
-        super().__init__(
-            require_username(username, "google_username", "gmail.com"))
-
-        user_slug = slugify(self.username)
-        self.user_confd = backup_confd("gcardvault", user_slug)
-        self.user_backupd = backup_datad("google_contacts", user_slug)
-
-        self.user_confd.mkdir(parents=True, exist_ok=True)
-        self.user_backupd.mkdir(parents=True, exist_ok=True)
-
-    def info(self) -> None:
-        print(f"Using config at {self.user_confd}")
-        print(f"Backing up to {self.user_backupd}")
-
-    def setup(self, *args: str) -> None:
-        print(f"Starting gcardvault login sequence for {self.username}...")
-        gcardvault(self.__dict__,
-            "login", self.username, *google_oauth_creds_as_args())
-        print(f"Created token for {self.username}")
-
-    def setup_required(self) -> bool:
-        # gcardvault will force setup on it's own when needed
-        return False
-
-    def _backup(self, subcommand: str, *args: str) -> None:
-        flags = google_oauth_creds_as_args()
-        if subcommand == "sync":
-            flags += ["--clean"]
-
-        print(f"Running gcardvault sync...")
-        gcardvault(self.__dict__, "sync", self.username, *flags)
+        super().__init__("google_contacts", username)

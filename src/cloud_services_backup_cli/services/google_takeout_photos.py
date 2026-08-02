@@ -1,9 +1,10 @@
+from __future__ import annotations
+
 import json
 from pathlib import Path
 import tempfile
 
 from ..lib import *
-from ..lib.takeout_photo_matching import plan_filename_matches, resolve_by_title
 from ..tools.rsync import *
 from ..tools.media import *
 from .google_takeout import *

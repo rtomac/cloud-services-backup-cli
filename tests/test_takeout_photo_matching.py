@@ -3,25 +3,15 @@ Tests for the two-tier Google Takeout sidecar<->media matcher.
 
 Runnable with pytest, or standalone: `python3 tests/test_takeout_photo_matching.py`
 """
-import importlib.util
 import os
 import sys
 
-# Load the matcher module directly by path so we don't import the whole
-# cloud_services_backup_cli.lib package (its __init__ pulls in modules that
-# require Python 3.12+ syntax, whereas this pure module runs on any 3.9+).
-_MOD_PATH = os.path.join(
-    os.path.dirname(__file__), "..", "src", "cloud_services_backup_cli",
-    "lib", "takeout_photo_matching.py",
-)
-_spec = importlib.util.spec_from_file_location("takeout_photo_matching", _MOD_PATH)
-_mod = importlib.util.module_from_spec(_spec)
-_spec.loader.exec_module(_mod)
+os.environ.setdefault("CLOUD_BACKUP_CONFD", "/tmp/test_conf")
+os.environ.setdefault("CLOUD_BACKUP_DATAD", "/tmp/test_data")
 
-plan_filename_matches = _mod.plan_filename_matches
-resolve_by_title = _mod.resolve_by_title
-DEFER = _mod.DEFER
-_match_one_filename = _mod._match_one_filename
+from cloud_services_backup_cli.tools.media import (  # noqa: E402
+    plan_filename_matches, resolve_by_title, DEFER, _match_one_filename,
+)
 
 
 def _match(json_name, media_names):

@@ -17,8 +17,7 @@ This CLI uses a combination of existing tools, product APIs, and custom scripts 
 Primarily makes use of the following tools:
 - [rclone](http://rclone.org/), installed locally or via [Docker](https://hub.docker.com/r/rclone/rclone/)
 - [got-your-back](https://github.com/GAM-team/got-your-back), installed locally or via [Docker](https://hub.docker.com/r/awbn/gyb)
-- [gcalvault](https://github.com/rtomac/gcalvault), installed locally or via [Docker](https://hub.docker.com/r/rtomac/gcalvault)
-- [gcardvault](https://github.com/rtomac/gcardvault), installed locally or via [Docker](https://hub.docker.com/r/rtomac/gcardvault)
+- [vdirsyncer](https://github.com/pimutils/vdirsyncer), installed via dependency
 
 # Services
 
@@ -68,8 +67,10 @@ See the [CLI help](src/cloud_services_backup_cli/USAGE.txt) for full usage and o
 The following are used by the CLI, but cloud-services-backup-cli will detect them and alternately fall back to running them via Docker if they are not found to be installed locally:
 - rclone
 - gyb
-- gcardvault
-- gcalvault
+
+## Required dependencies (non-Python)
+The following must be installed locally:
+- vdirsyncer
 
 ## Download
 ```

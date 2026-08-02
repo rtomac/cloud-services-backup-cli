@@ -16,7 +16,6 @@ def main():
 
 def run(argv: list[str]) -> None:
     setup_logging()
-    check_env()
 
     command = argv[1] if len(argv) > 1 else "help"
     if command in ("", "help"):
@@ -36,6 +35,8 @@ def run(argv: list[str]) -> None:
     if subcommand == "help":
         service_usage(service_type)
         sys.exit(0)
+    
+    check_env()
     
     username = argv[3] if len(argv) > 3 else None
     service = service_type(username)

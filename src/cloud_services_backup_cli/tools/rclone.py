@@ -7,14 +7,11 @@ from pathlib import Path
 from ..lib import *
 from . import shell
 
-RCLONE_CONFIG = os.environ.get(
-    "RCLONE_CONFIG",
-    str(backup_confd().joinpath("rclone", "rclone.conf")))
-RCLONE_CONFD = os.path.dirname(RCLONE_CONFIG)
-
-
 def rclone_config() -> Path:
-    return Path(RCLONE_CONFIG)
+    config = os.environ.get(
+        "RCLONE_CONFIG",
+        str(backup_confd().joinpath("rclone", "rclone.conf")))
+    return Path(config)
 
 def rclone_remote_name(app_slug: str, user_slug: str) -> str:
     return f"{app_slug}+{user_slug}"
@@ -46,10 +43,11 @@ def rclone_pipe(*args: str) -> str:
     return result.stdout
 
 def __rclone_run(args: list[str], **kwargs) -> CompletedProcess:
-    os.makedirs(RCLONE_CONFD, exist_ok=True)
+    config_path = rclone_config()
+    os.makedirs(config_path.parent, exist_ok=True)
     cmd = ['rclone', *shell.stringify_args(args)]
     log_command(cmd)
-    return subprocess.run(cmd, env=shell.env(RCLONE_CONFIG=RCLONE_CONFIG), **kwargs)
+    return subprocess.run(cmd, env=shell.env(RCLONE_CONFIG=str(config_path)), **kwargs)
 
 
 class RcloneService(Service):

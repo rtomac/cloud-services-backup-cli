@@ -15,6 +15,7 @@ RUN apk add --no-cache \
 RUN bash <(curl -s -S -L https://git.io/gyb-install) -d /opt -v ${GYB_VERSION} -l
 ENV PATH="/opt/gyb:$PATH"
 
+# Download and install cli
 RUN git clone https://github.com/rtomac/cloud-services-backup-cli.git /opt/cloud-services-backup-cli \
     && pip install -e /opt/cloud-services-backup-cli
 

@@ -114,6 +114,11 @@ docker run --rm -it \
   cloud-services-backup-cli help
 ```
 
+Note: To run a local checkout (i.e. for testing), bind mount the repo over the installed path with something like:
+```
+    -v "$(pwd):/opt/cloud-services-backup-cli"
+```
+
 # License
 
 MIT License

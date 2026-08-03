@@ -114,9 +114,9 @@ docker run --rm -it \
   cloud-services-backup-cli help
 ```
 
-Note: To run a local checkout (i.e. for testing), bind mount the repo over the installed path with something like:
+Note: To run against local repo clone (for testing), you can bind mount the repo over the installed path, e.g.:
 ```
-    -v "$(pwd):/opt/cloud-services-backup-cli"
+  -v "$(pwd):/opt/cloud-services-backup-cli"
 ```
 
 # License

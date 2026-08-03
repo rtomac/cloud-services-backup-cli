@@ -61,9 +61,9 @@ See the [CLI help](src/cloud_services_backup_cli/USAGE.txt) for full usage and o
 - Python 3.9+
 - rsync
 - git
-- exiftool
 - [rclone](https://rclone.org/install/) (for Google Drive, Dropbox, etc.)
 - [gyb](https://github.com/GAM-team/got-your-back/releases) (for Gmail)
+- [exiftool](https://exiftool.org/) (for photos)
 
 ## Download
 ```
@@ -114,7 +114,7 @@ docker run --rm -it \
   cloud-services-backup-cli help
 ```
 
-Note: To run against local repo clone (for testing), you can bind mount the repo over the installed path, e.g.:
+Note: To run against a local repo clone (for testing), you can bind mount the repo over the installed path, e.g.:
 ```
   -v "$(pwd):/opt/cloud-services-backup-cli"
 ```

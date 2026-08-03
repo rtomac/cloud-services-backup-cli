@@ -22,5 +22,8 @@ dependencies = [
 [tool.setuptools.packages.find]
 where = ["src"]
 
+[tool.setuptools.package-data]
+cloud_services_backup_cli = ["*.txt"]
+
 [project.scripts]
 cloud-service-backup = "cloud_services_backup_cli.__main__:main"

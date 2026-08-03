@@ -2,7 +2,6 @@ from abc import abstractmethod
 import os
 import subprocess
 from subprocess import CompletedProcess
-import shutil
 from pathlib import Path
 
 from ..lib import *
@@ -48,28 +47,9 @@ def rclone_pipe(*args: str) -> str:
 
 def __rclone_run(args: list[str], **kwargs) -> CompletedProcess:
     os.makedirs(RCLONE_CONFD, exist_ok=True)
-
-    if shutil.which("rclone") is not None:
-        cmd = ['rclone', *shell.stringify_args(args)]
-        log_command(cmd)
-        return subprocess.run(
-            cmd,
-            env=shell.env(RCLONE_CONFIG=RCLONE_CONFIG),
-            **kwargs)
-    
-    cmd = [
-        'docker', 'run',
-        '--rm',
-        *shell.docker_flags(),
-        '-v', '/etc/localtime:/etc/localtime:ro',
-        '-v', '/etc/timezone:/etc/timezone:ro',
-        '-v', f'{RCLONE_CONFD}:{RCLONE_CONFD}',
-        '-v', f'{backup_datad()}:{backup_datad()}',
-        '-e', f'RCLONE_CONFIG={RCLONE_CONFIG}',
-        'rclone/rclone', *shell.stringify_args(args)
-    ]
+    cmd = ['rclone', *shell.stringify_args(args)]
     log_command(cmd)
-    return subprocess.run(cmd, **kwargs)
+    return subprocess.run(cmd, env=shell.env(RCLONE_CONFIG=RCLONE_CONFIG), **kwargs)
 
 
 class RcloneService(Service):

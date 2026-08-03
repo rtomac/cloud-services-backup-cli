@@ -15,8 +15,8 @@ The goal of this CLI is to simply set a couple of environment variables and star
 This CLI uses a combination of existing tools, product APIs, and custom scripts to do its work.
 
 Primarily makes use of the following tools:
-- [rclone](http://rclone.org/), installed locally or via [Docker](https://hub.docker.com/r/rclone/rclone/)
-- [got-your-back](https://github.com/GAM-team/got-your-back), installed locally or via [Docker](https://hub.docker.com/r/awbn/gyb)
+- [rclone](http://rclone.org/)
+- [got-your-back](https://github.com/GAM-team/got-your-back)
 - [vdirsyncer](https://github.com/pimutils/vdirsyncer), installed via dependency
 
 # Services
@@ -62,15 +62,8 @@ See the [CLI help](src/cloud_services_backup_cli/USAGE.txt) for full usage and o
 - rsync
 - git
 - exiftool
-
-## Optional dependencies
-The following are used by the CLI, but cloud-services-backup-cli will detect them and alternately fall back to running them via Docker if they are not found to be installed locally:
-- rclone
-- gyb
-
-## Required dependencies (non-Python)
-The following must be installed locally:
-- vdirsyncer
+- [rclone](https://rclone.org/install/) (for Google Drive, Dropbox, etc.)
+- [gyb](https://github.com/GAM-team/got-your-back/releases) (for Gmail)
 
 ## Download
 ```
@@ -100,10 +93,26 @@ export CLOUD_BACKUP_DATAD=$HOME/cloud/data
 
 ## Run setup commands
 
-Each of these command require an authentication when first run (typically
-an OAuth authentication flow). Run each command interactively the first time,
-unattended after that. Each service supports a `setup` subcommand to
-run (or rerun) the setup on its own.
+Each of these commands require authentication when first run (typically
+an OAuth flow). Run each interactively the first time, unattended after that.
+Each service supports a `setup` subcommand to run (or rerun) setup in isolation.
+
+## Docker
+
+A [Dockerfile](Dockerfile) is provided as an alternative to installing prerequisites
+locally. It clones this repo and installs all dependencies. Build and run with:
+
+```
+curl -O https://raw.githubusercontent.com/rtomac/cloud-services-backup-cli/main/Dockerfile
+docker build -t cloud-services-backup-cli .
+
+docker run --rm -it \
+  -v "$CLOUD_BACKUP_CONFD:$CLOUD_BACKUP_CONFD" \
+  -v "$CLOUD_BACKUP_DATAD:$CLOUD_BACKUP_DATAD" \
+  -e "CLOUD_BACKUP_CONFD=$CLOUD_BACKUP_CONFD" \
+  -e "CLOUD_BACKUP_DATAD=$CLOUD_BACKUP_DATAD" \
+  cloud-services-backup-cli help
+```
 
 # License
 

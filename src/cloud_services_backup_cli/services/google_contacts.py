@@ -21,11 +21,22 @@ Subcommands:
         for contacts that have been removed remotely.
 
 OAuth2 authentication:
-  If you are providing your own Google OAuth2 client (via environment
-  variables), you will need to ensure the correct APIs and OAuth2 scopes
-  are enabled. See:
-  https://vdirsyncer.pimutils.org/en/stable/supported.html#google
+  vdirsyncer *requires* use ofyour own Google OAuth2 client, so
+  these environment variables are required: 
+  - GOOGLE_OAUTH_CLIENT_ID
+  - GOOGLE_OAUTH_CLIENT_SECRET
+
+  Your Google OAuth2 client must:
+  - Have "CardDAV" API enabled on the project
+  - Be configured as a "Desktop application"
+  - Allow "https://www.googleapis.com/auth/carddav" scope
+
+  For more info, see:
+  https://vdirsyncer.pimutils.org/en/stable/config.html#google
     """
 
+    storage_type = "google_contacts"
+    file_ext = ".vcf"
+
     def __init__(self, username: str):
-        super().__init__("google_contacts", username)
+        super().__init__(username)

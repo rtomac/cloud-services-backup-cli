@@ -29,15 +29,20 @@ def run(argv: list[str]) -> None:
         error(f"Invalid service '{service_slug}'")
 
     subcommand = argv[2] if len(argv) > 2 else "help"
-    if subcommand not in ("help", "setup", "copy", "sync"):
-        error(f"Invalid subcommand '{subcommand}'")
+    if subcommand not in ("help", "authorize", "setup", "copy", "sync"):
+        error_invalid_subcommand(subcommand)
 
     if subcommand == "help":
-        service_usage(service_type)
+        service_type.help()
         sys.exit(0)
-    
+
+    if subcommand == "authorize":
+        payload = argv[3] if len(argv) > 3 else None
+        service_type.authorize(payload)
+        sys.exit(0)
+
     check_env()
-    
+
     username = argv[3] if len(argv) > 3 else None
     service = service_type(username)
     service.info()
@@ -78,10 +83,6 @@ def check_env() -> None:
 def usage() -> None:
     with open(usage_file_path) as f:
         print_usage(f.read())
-
-def service_usage(service_type: type) -> None:
-    usage_text = get_service_usage(service_type)
-    print_usage(usage_text)
 
 
 if __name__ == '__main__':

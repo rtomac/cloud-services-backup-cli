@@ -1,5 +1,7 @@
 from abc import ABC, abstractmethod
 
+from .util import error_invalid_subcommand, print_usage
+
 
 REGISTRY = {}
 
@@ -7,19 +9,24 @@ REGISTRY = {}
 def register_service(slug: str):
     def wrapper(cls):
         REGISTRY[slug] = cls
+        cls.service_slug = slug
         return cls
     return wrapper
 
 def resolve_service(slug: str) -> type:
     return REGISTRY[slug]
 
-def get_service_usage(service_type: type) -> str:
-    return service_type.__doc__.strip()
-
-
 class Service(ABC):
     def __init__(self, username: str):
         self.username = username
+
+    @classmethod
+    def help(cls) -> None:
+        print_usage(cls.__doc__)
+
+    @classmethod
+    def authorize(cls, payload: str = None) -> None:
+        error_invalid_subcommand("authorize")
 
     @abstractmethod
     def info(self) -> None:

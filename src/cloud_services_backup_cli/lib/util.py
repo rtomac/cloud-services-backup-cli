@@ -46,6 +46,9 @@ def error(msg: str) -> None:
     print(msg, file=sys.stderr)
     exit(1)
 
+def error_invalid_subcommand(subcommand: str) -> None:
+    error(f"Invalid subcommand '{subcommand}'")
+
 
 def print_usage(text: str) -> None:
     print(f"\n{text.strip()}\n")
